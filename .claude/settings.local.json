@@ -6,7 +6,8 @@
       "Bash(git add:*)",
       "Bash(git commit -m 'Fix middleware to gracefully handle missing Supabase env vars:*)",
       "Bash(git push:*)",
-      "Bash(git commit -m 'Redesign: modern UI, animations, mobile-first responsive layout:*)"
+      "Bash(git commit -m 'Redesign: modern UI, animations, mobile-first responsive layout:*)",
+      "Bash(git commit -m 'Admin panel: delete all, confirmation modal, visual redesign:*)"
     ]
   }
 }

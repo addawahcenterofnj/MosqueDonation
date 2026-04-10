@@ -10,15 +10,26 @@ import CampaignForm from '@/components/campaign-form';
 import DonationForm from '@/components/donation-form';
 import AdminCampaignTable from '@/components/admin-campaign-table';
 import AdminDonationTable from '@/components/admin-donation-table';
+import ConfirmModal from '@/components/confirm-modal';
 import { generateCampaignPDF } from '@/lib/pdf';
 import { formatCurrency } from '@/lib/utils';
 
 type Section = 'campaigns' | 'donations' | 'reports';
 
-const TAB_ICONS: Record<Section, string> = {
-  campaigns: '🎯',
-  donations: '💳',
-  reports: '📄',
+type ToastType = 'success' | 'error';
+
+interface ModalState {
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  onConfirm: () => void;
+}
+
+const SECTION_STYLE: Record<Section, { accent: string; light: string; border: string; tab: string }> = {
+  campaigns: { accent: '#6366f1', light: '#eef2ff', border: '#c7d2fe', tab: '#6366f1' },
+  donations: { accent: '#059669', light: '#ecfdf5', border: '#a7f3d0', tab: '#059669' },
+  reports:   { accent: '#d97706', light: '#fffbeb', border: '#fde68a', tab: '#d97706' },
 };
 
 export default function AdminDashboard() {
@@ -30,16 +41,28 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>('campaigns');
+
   const [toast, setToast] = useState('');
+  const [toastType, setToastType] = useState<ToastType>('success');
 
   const [showCampaignForm, setShowCampaignForm] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [showDonationForm, setShowDonationForm] = useState(false);
   const [editingDonation, setEditingDonation] = useState<Donation | null>(null);
 
-  const showToast = (msg: string) => {
+  const [modal, setModal] = useState<ModalState>({
+    open: false, title: '', message: '', onConfirm: () => {},
+  });
+
+  const openModal = (opts: Omit<ModalState, 'open'>) =>
+    setModal({ open: true, ...opts });
+  const closeModal = () =>
+    setModal(m => ({ ...m, open: false }));
+
+  const showToast = (msg: string, type: ToastType = 'success') => {
     setToast(msg);
-    setTimeout(() => setToast(''), 3000);
+    setToastType(type);
+    setTimeout(() => setToast(''), 3500);
   };
 
   const fetchData = useCallback(async () => {
@@ -74,16 +97,14 @@ export default function AdminDashboard() {
     router.refresh();
   };
 
-  // Campaign CRUD
+  // ── Campaign CRUD ──────────────────────────────────────
   const handleCampaignSubmit = async (data: CampaignFormData) => {
     setSaving(true);
-    if (editingCampaign) {
-      await supabase.from('campaigns').update(data).eq('id', editingCampaign.id);
-      showToast('Campaign updated successfully');
-    } else {
-      await supabase.from('campaigns').insert(data);
-      showToast('Campaign created successfully');
-    }
+    const { error } = editingCampaign
+      ? await supabase.from('campaigns').update(data).eq('id', editingCampaign.id)
+      : await supabase.from('campaigns').insert(data);
+    if (error) { showToast('Something went wrong. Please try again.', 'error'); }
+    else { showToast(editingCampaign ? 'Campaign updated!' : 'Campaign created!'); }
     await fetchData();
     setShowCampaignForm(false);
     setEditingCampaign(null);
@@ -97,14 +118,42 @@ export default function AdminDashboard() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCampaignDelete = async (id: string) => {
-    if (!confirm('Delete this campaign? All donations linked to it will be affected.')) return;
-    await supabase.from('campaigns').delete().eq('id', id);
-    await fetchData();
-    showToast('Campaign deleted');
+  const handleCampaignDelete = (id: string) => {
+    openModal({
+      title: 'Delete Campaign',
+      message: 'This will permanently delete the campaign and all its linked donations. This action cannot be undone.',
+      confirmLabel: 'Delete Campaign',
+      onConfirm: async () => {
+        closeModal();
+        // Delete linked donations first, then campaign
+        await supabase.from('donations').delete().eq('campaign_id', id);
+        await supabase.from('campaigns').delete().eq('id', id);
+        await fetchData();
+        showToast('Campaign deleted');
+      },
+    });
   };
 
-  // Donation CRUD
+  const handleDeleteAllCampaigns = () => {
+    if (campaigns.length === 0) return;
+    openModal({
+      title: 'Delete All Campaigns',
+      message: `This will permanently delete all ${campaigns.length} campaigns and all ${donations.length} donations. This cannot be undone.`,
+      confirmLabel: `Delete All (${campaigns.length})`,
+      onConfirm: async () => {
+        closeModal();
+        setSaving(true);
+        // Delete all donations first, then all campaigns
+        await supabase.from('donations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('campaigns').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await fetchData();
+        showToast('All campaigns and donations deleted');
+        setSaving(false);
+      },
+    });
+  };
+
+  // ── Donation CRUD ──────────────────────────────────────
   const handleDonationSubmit = async (data: DonationFormData) => {
     setSaving(true);
     const payload = {
@@ -115,13 +164,11 @@ export default function AdminDashboard() {
       donation_date: data.donation_date,
       notes: data.notes || null,
     };
-    if (editingDonation) {
-      await supabase.from('donations').update(payload).eq('id', editingDonation.id);
-      showToast('Donation updated successfully');
-    } else {
-      await supabase.from('donations').insert(payload);
-      showToast('Donation added successfully');
-    }
+    const { error } = editingDonation
+      ? await supabase.from('donations').update(payload).eq('id', editingDonation.id)
+      : await supabase.from('donations').insert(payload);
+    if (error) { showToast('Something went wrong. Please try again.', 'error'); }
+    else { showToast(editingDonation ? 'Donation updated!' : 'Donation added!'); }
     await fetchData();
     setShowDonationForm(false);
     setEditingDonation(null);
@@ -135,49 +182,110 @@ export default function AdminDashboard() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDonationDelete = async (id: string) => {
-    if (!confirm('Delete this donation?')) return;
-    await supabase.from('donations').delete().eq('id', id);
-    await fetchData();
-    showToast('Donation deleted');
+  const handleDonationDelete = (id: string) => {
+    openModal({
+      title: 'Delete Donation',
+      message: 'This will permanently remove this donation record. This action cannot be undone.',
+      confirmLabel: 'Delete Donation',
+      onConfirm: async () => {
+        closeModal();
+        await supabase.from('donations').delete().eq('id', id);
+        await fetchData();
+        showToast('Donation deleted');
+      },
+    });
   };
 
+  const handleDeleteAllDonations = () => {
+    if (donations.length === 0) return;
+    openModal({
+      title: 'Delete All Donations',
+      message: `This will permanently delete all ${donations.length} donation records. Campaign data will remain. This cannot be undone.`,
+      confirmLabel: `Delete All (${donations.length})`,
+      onConfirm: async () => {
+        closeModal();
+        setSaving(true);
+        await supabase.from('donations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await fetchData();
+        showToast('All donations deleted');
+        setSaving(false);
+      },
+    });
+  };
+
+  // ── Campaign donations delete (from reports) ───────────
+  const handleDeleteCampaignDonations = (campaign: Campaign) => {
+    const count = donations.filter(d => d.campaign_id === campaign.id).length;
+    if (count === 0) { showToast('No donations to delete for this campaign.'); return; }
+    openModal({
+      title: `Clear Donations`,
+      message: `Delete all ${count} donation${count !== 1 ? 's' : ''} from "${campaign.name}"? The campaign itself will remain.`,
+      confirmLabel: `Delete ${count} Donation${count !== 1 ? 's' : ''}`,
+      onConfirm: async () => {
+        closeModal();
+        await supabase.from('donations').delete().eq('campaign_id', campaign.id);
+        await fetchData();
+        showToast(`Donations cleared from "${campaign.name}"`);
+      },
+    });
+  };
+
+  // ── PDF ────────────────────────────────────────────────
   const handleDownloadPDF = (campaign: Campaign) => {
     generateCampaignPDF(campaign, donations.filter(d => d.campaign_id === campaign.id));
-    showToast('PDF downloaded');
+    showToast('PDF report downloaded');
   };
 
   const totalAmount = campaigns.reduce((s, c) => s + (c.total_amount ?? 0), 0);
+  const style = SECTION_STYLE[activeSection];
 
-  const navItems: { key: Section; label: string }[] = [
-    { key: 'campaigns', label: 'Campaigns' },
-    { key: 'donations', label: 'Donations' },
-    { key: 'reports', label: 'Reports' },
+  const navItems: { key: Section; label: string; icon: string }[] = [
+    { key: 'campaigns', label: 'Campaigns', icon: '🎯' },
+    { key: 'donations', label: 'Donations', icon: '💳' },
+    { key: 'reports',   label: 'Reports',   icon: '📄' },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#f8fafc' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#f1f5f9' }}>
       <Navbar isAdmin onLogout={handleLogout} />
 
-      {/* Admin hero bar */}
-      <div style={{ background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)', borderBottom: '1px solid #475569' }}>
+      {/* ── Admin Hero Bar ── */}
+      <div style={{
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
+        borderBottom: '1px solid #1e3a5f',
+      }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
+
+            {/* Title */}
             <div className="animate-slide-down">
-              <p className="text-slate-400 text-xs font-semibold uppercase tracking-widest mb-1">Admin Panel</p>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Dashboard</h1>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full"
+                  style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}>
+                  Admin Panel
+                </span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                Dashboard
+              </h1>
+              <p className="text-slate-400 text-sm mt-1">Manage your mosque donation data</p>
             </div>
+
+            {/* Stats */}
             {!loading && (
-              <div className="flex gap-3 animate-fade-in">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 animate-fade-in">
                 {[
-                  { label: 'Total Raised', value: formatCurrency(totalAmount), color: '#34d399' },
-                  { label: 'Campaigns', value: String(campaigns.length), color: '#818cf8' },
-                  { label: 'Donations', value: String(donations.length), color: '#38bdf8' },
+                  { label: 'Total Raised', value: formatCurrency(totalAmount), color: '#34d399', bg: 'rgba(52,211,153,0.1)', border: 'rgba(52,211,153,0.25)' },
+                  { label: 'Campaigns',    value: String(campaigns.length),    color: '#818cf8', bg: 'rgba(129,140,248,0.1)', border: 'rgba(129,140,248,0.25)' },
+                  { label: 'Donations',    value: String(donations.length),    color: '#38bdf8', bg: 'rgba(56,189,248,0.1)',  border: 'rgba(56,189,248,0.25)' },
                 ].map(stat => (
-                  <div key={stat.label} className="text-center px-3 py-2 rounded-xl"
-                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                    <p className="text-lg font-extrabold" style={{ color: stat.color }}>{stat.value}</p>
-                    <p className="text-xs text-slate-400 font-medium">{stat.label}</p>
+                  <div key={stat.label}
+                    className="text-center px-3 sm:px-4 py-2.5 rounded-xl"
+                    style={{ background: stat.bg, border: `1px solid ${stat.border}` }}>
+                    <p className="text-base sm:text-xl font-extrabold" style={{ color: stat.color }}>
+                      {stat.value}
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-slate-400 font-medium mt-0.5">{stat.label}</p>
                   </div>
                 ))}
               </div>
@@ -188,166 +296,294 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-1">
 
-        {/* Tabs */}
-        <div className="flex gap-1 p-1 rounded-xl mb-6 w-full sm:w-fit"
-          style={{ background: '#e2e8f0' }}>
-          {navItems.map(({ key, label }) => (
-            <button key={key} onClick={() => setActiveSection(key)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all flex-1 sm:flex-none justify-center"
-              style={activeSection === key
-                ? { background: '#fff', color: '#059669', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }
-                : { color: '#64748b' }
-              }>
-              <span>{TAB_ICONS[key]}</span>
-              {label}
-              {!loading && (
-                <span className="text-xs px-1.5 py-0.5 rounded-full font-bold"
-                  style={activeSection === key
-                    ? { background: '#ecfdf5', color: '#059669' }
-                    : { background: '#f1f5f9', color: '#94a3b8' }
-                  }>
-                  {key === 'campaigns' ? campaigns.length : key === 'donations' ? donations.length : campaigns.length}
-                </span>
-              )}
-            </button>
-          ))}
+        {/* ── Section Tabs ── */}
+        <div className="flex gap-0 p-1 rounded-2xl mb-6 w-full"
+          style={{ background: '#e2e8f0', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)' }}>
+          {navItems.map(({ key, label, icon }) => {
+            const s = SECTION_STYLE[key];
+            const isActive = activeSection === key;
+            return (
+              <button key={key} onClick={() => setActiveSection(key)}
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex-1 justify-center"
+                style={isActive
+                  ? {
+                      background: '#fff',
+                      color: s.accent,
+                      boxShadow: `0 2px 12px rgba(0,0,0,0.1), 0 0 0 1.5px ${s.accent}30`,
+                    }
+                  : { color: '#64748b' }
+                }>
+                <span className="text-base sm:text-lg">{icon}</span>
+                <span className="hidden xs:inline sm:inline">{label}</span>
+                {!loading && (
+                  <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full font-extrabold"
+                    style={isActive
+                      ? { background: s.light, color: s.accent, border: `1px solid ${s.border}` }
+                      : { background: '#f1f5f9', color: '#94a3b8' }
+                    }>
+                    {key === 'campaigns' ? campaigns.length : key === 'donations' ? donations.length : campaigns.length}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
+        {/* ── Content ── */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-3">
-            <svg className="w-10 h-10 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <p className="text-gray-400 font-medium">Loading dashboard…</p>
+          <div className="flex flex-col items-center justify-center py-32 gap-4">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)' }}>
+                <svg className="w-8 h-8 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-gray-400 font-semibold">Loading your dashboard…</p>
           </div>
         ) : (
           <>
-            {/* ── Campaigns ── */}
+            {/* ════════════════ CAMPAIGNS ════════════════ */}
             {activeSection === 'campaigns' && (
               <div className="space-y-5 animate-fade-in">
-                <div className="bg-white rounded-2xl p-5 sm:p-6"
-                  style={{ border: '1.5px solid #e2e8f0', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-                  <div className="flex items-center justify-between mb-5">
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-900">
-                        {editingCampaign ? '✏️ Edit Campaign' : showCampaignForm ? '➕ New Campaign' : 'Campaigns'}
-                      </h2>
-                      {!showCampaignForm && (
-                        <p className="text-sm text-gray-500 mt-0.5">{campaigns.length} total</p>
+
+                {/* Form card */}
+                <div className="bg-white rounded-2xl overflow-hidden"
+                  style={{ border: `1.5px solid ${showCampaignForm ? style.border : '#e2e8f0'}`, boxShadow: '0 2px 16px rgba(0,0,0,0.05)' }}>
+                  {/* Card header */}
+                  <div className="px-5 sm:px-6 py-4 flex items-center justify-between"
+                    style={{ borderBottom: `1.5px solid ${showCampaignForm ? style.border : '#f1f5f9'}`, background: showCampaignForm ? style.light : '#fafbfc' }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
+                        style={{ background: style.light, border: `1.5px solid ${style.border}` }}>🎯</div>
+                      <div>
+                        <h2 className="font-bold text-gray-900">
+                          {editingCampaign ? 'Edit Campaign' : showCampaignForm ? 'New Campaign' : 'Campaigns'}
+                        </h2>
+                        {!showCampaignForm && (
+                          <p className="text-xs text-gray-400">{campaigns.length} total campaign{campaigns.length !== 1 ? 's' : ''}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!showCampaignForm && campaigns.length > 0 && (
+                        <button
+                          onClick={handleDeleteAllCampaigns}
+                          className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg transition-all"
+                          style={{ background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }}>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          <span className="hidden sm:inline">Delete All</span>
+                        </button>
+                      )}
+                      {!showCampaignForm ? (
+                        <button
+                          onClick={() => { setEditingCampaign(null); setShowCampaignForm(true); }}
+                          className="btn-primary">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span className="hidden sm:inline">New Campaign</span>
+                          <span className="sm:hidden">New</span>
+                        </button>
+                      ) : (
+                        <button onClick={() => { setShowCampaignForm(false); setEditingCampaign(null); }}
+                          className="btn-ghost py-2 px-3 text-sm">✕ Cancel</button>
                       )}
                     </div>
-                    {!showCampaignForm && (
-                      <button onClick={() => { setEditingCampaign(null); setShowCampaignForm(true); }}
-                        className="btn-primary">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                        </svg>
-                        New Campaign
-                      </button>
+                  </div>
+
+                  <div className="p-5 sm:p-6">
+                    {showCampaignForm ? (
+                      <CampaignForm initial={editingCampaign} onSubmit={handleCampaignSubmit}
+                        onCancel={() => { setShowCampaignForm(false); setEditingCampaign(null); }} loading={saving} />
+                    ) : (
+                      <AdminCampaignTable campaigns={campaigns} onEdit={handleCampaignEdit} onDelete={handleCampaignDelete} />
                     )}
                   </div>
-                  {showCampaignForm && (
-                    <CampaignForm initial={editingCampaign} onSubmit={handleCampaignSubmit}
-                      onCancel={() => { setShowCampaignForm(false); setEditingCampaign(null); }} loading={saving} />
-                  )}
-                  {!showCampaignForm && (
-                    <AdminCampaignTable campaigns={campaigns} onEdit={handleCampaignEdit} onDelete={handleCampaignDelete} />
-                  )}
                 </div>
               </div>
             )}
 
-            {/* ── Donations ── */}
+            {/* ════════════════ DONATIONS ════════════════ */}
             {activeSection === 'donations' && (
               <div className="space-y-5 animate-fade-in">
-                <div className="bg-white rounded-2xl p-5 sm:p-6"
-                  style={{ border: '1.5px solid #e2e8f0', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-                  <div className="flex items-center justify-between mb-5">
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-900">
-                        {editingDonation ? '✏️ Edit Donation' : showDonationForm ? '➕ Add Donation' : 'Donations'}
-                      </h2>
-                      {!showDonationForm && (
-                        <p className="text-sm text-gray-500 mt-0.5">{donations.length} total</p>
+                <div className="bg-white rounded-2xl overflow-hidden"
+                  style={{ border: `1.5px solid ${showDonationForm ? style.border : '#e2e8f0'}`, boxShadow: '0 2px 16px rgba(0,0,0,0.05)' }}>
+                  {/* Card header */}
+                  <div className="px-5 sm:px-6 py-4 flex items-center justify-between"
+                    style={{ borderBottom: `1.5px solid ${showDonationForm ? style.border : '#f1f5f9'}`, background: showDonationForm ? style.light : '#fafbfc' }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
+                        style={{ background: style.light, border: `1.5px solid ${style.border}` }}>💳</div>
+                      <div>
+                        <h2 className="font-bold text-gray-900">
+                          {editingDonation ? 'Edit Donation' : showDonationForm ? 'New Donation' : 'Donations'}
+                        </h2>
+                        {!showDonationForm && (
+                          <p className="text-xs text-gray-400">{donations.length} total donation{donations.length !== 1 ? 's' : ''}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!showDonationForm && donations.length > 0 && (
+                        <button
+                          onClick={handleDeleteAllDonations}
+                          className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg transition-all"
+                          style={{ background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }}>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          <span className="hidden sm:inline">Delete All</span>
+                        </button>
+                      )}
+                      {!showDonationForm ? (
+                        <button
+                          onClick={() => { setEditingDonation(null); setShowDonationForm(true); }}
+                          className="btn-primary">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span className="hidden sm:inline">Add Donation</span>
+                          <span className="sm:hidden">Add</span>
+                        </button>
+                      ) : (
+                        <button onClick={() => { setShowDonationForm(false); setEditingDonation(null); }}
+                          className="btn-ghost py-2 px-3 text-sm">✕ Cancel</button>
                       )}
                     </div>
-                    {!showDonationForm && (
-                      <button onClick={() => { setEditingDonation(null); setShowDonationForm(true); }}
-                        className="btn-primary">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Add Donation
-                      </button>
+                  </div>
+
+                  <div className="p-5 sm:p-6">
+                    {showDonationForm ? (
+                      <DonationForm initial={editingDonation} campaigns={campaigns} onSubmit={handleDonationSubmit}
+                        onCancel={() => { setShowDonationForm(false); setEditingDonation(null); }} loading={saving} />
+                    ) : (
+                      <AdminDonationTable donations={donations} onEdit={handleDonationEdit} onDelete={handleDonationDelete} />
                     )}
                   </div>
-                  {showDonationForm && (
-                    <DonationForm initial={editingDonation} campaigns={campaigns} onSubmit={handleDonationSubmit}
-                      onCancel={() => { setShowDonationForm(false); setEditingDonation(null); }} loading={saving} />
-                  )}
-                  {!showDonationForm && (
-                    <AdminDonationTable donations={donations} onEdit={handleDonationEdit} onDelete={handleDonationDelete} />
-                  )}
                 </div>
               </div>
             )}
 
-            {/* ── Reports ── */}
+            {/* ════════════════ REPORTS ════════════════ */}
             {activeSection === 'reports' && (
               <div className="animate-fade-in">
-                <div className="bg-white rounded-2xl p-5 sm:p-6"
-                  style={{ border: '1.5px solid #e2e8f0', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-                  <h2 className="text-lg font-bold text-gray-900 mb-1">Campaign Reports</h2>
-                  <p className="text-sm text-gray-500 mb-5">Download a PDF report for any campaign.</p>
-                  {campaigns.length === 0 ? (
-                    <div className="flex flex-col items-center py-12 text-gray-400"
-                      style={{ background: '#f9fafb', borderRadius: '1rem', border: '1.5px dashed #e5e7eb' }}>
-                      <span className="text-4xl mb-2">📄</span>
-                      <p className="font-medium text-gray-500">No campaigns yet</p>
+                <div className="bg-white rounded-2xl overflow-hidden"
+                  style={{ border: '1.5px solid #e2e8f0', boxShadow: '0 2px 16px rgba(0,0,0,0.05)' }}>
+
+                  {/* Card header */}
+                  <div className="px-5 sm:px-6 py-4 flex items-center justify-between"
+                    style={{ borderBottom: '1.5px solid #f1f5f9', background: '#fafbfc' }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
+                        style={{ background: style.light, border: `1.5px solid ${style.border}` }}>📄</div>
+                      <div>
+                        <h2 className="font-bold text-gray-900">Campaign Reports</h2>
+                        <p className="text-xs text-gray-400">Download PDF or clear donations per campaign</p>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {campaigns.map((c) => {
-                        const count = donations.filter(d => d.campaign_id === c.id).length;
-                        return (
-                          <div key={c.id}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl transition-all"
-                            style={{ border: '1.5px solid #e2e8f0', background: '#fafafa' }}
-                            onMouseEnter={e => {
-                              (e.currentTarget as HTMLElement).style.borderColor = '#a7f3d0';
-                              (e.currentTarget as HTMLElement).style.background = '#f0fdf4';
-                            }}
-                            onMouseLeave={e => {
-                              (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0';
-                              (e.currentTarget as HTMLElement).style.background = '#fafafa';
-                            }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
-                                style={{ background: '#ecfdf5', border: '1px solid #a7f3d0' }}>🎯</div>
-                              <div>
-                                <p className="font-bold text-gray-900">{c.name}</p>
-                                <p className="text-sm text-gray-500">
-                                  {count} donation{count !== 1 ? 's' : ''} &middot;{' '}
-                                  <span className="font-semibold" style={{ color: '#059669' }}>
-                                    {formatCurrency(c.total_amount ?? 0)}
-                                  </span>
-                                </p>
+                  </div>
+
+                  <div className="p-5 sm:p-6">
+                    {campaigns.length === 0 ? (
+                      <div className="flex flex-col items-center py-16 text-gray-400"
+                        style={{ background: '#f9fafb', borderRadius: '1rem', border: '1.5px dashed #e5e7eb' }}>
+                        <span className="text-5xl mb-3">📄</span>
+                        <p className="font-semibold text-gray-500">No campaigns yet</p>
+                        <p className="text-sm mt-1">Create campaigns first to generate reports</p>
+                        <button onClick={() => setActiveSection('campaigns')}
+                          className="mt-4 btn-primary text-sm py-2">Go to Campaigns</button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {campaigns.map((c) => {
+                          const count = donations.filter(d => d.campaign_id === c.id).length;
+                          const amount = c.total_amount ?? 0;
+                          return (
+                            <div key={c.id}
+                              className="rounded-2xl overflow-hidden transition-all"
+                              style={{ border: '1.5px solid #e2e8f0', boxShadow: '0 1px 8px rgba(0,0,0,0.04)' }}>
+
+                              {/* Campaign row */}
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4">
+                                {/* Left: info */}
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
+                                    style={{ background: style.light, border: `1px solid ${style.border}` }}>🎯</div>
+                                  <div className="min-w-0">
+                                    <p className="font-bold text-gray-900 truncate">{c.name}</p>
+                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                      <span className="text-xs font-semibold" style={{ color: '#059669' }}>
+                                        {formatCurrency(amount)}
+                                      </span>
+                                      <span className="text-gray-300">·</span>
+                                      <span className="text-xs text-gray-500">
+                                        {count} donation{count !== 1 ? 's' : ''}
+                                      </span>
+                                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                                        style={c.is_active
+                                          ? { background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }
+                                          : { background: '#f3f4f6', color: '#6b7280', border: '1px solid #e5e7eb' }
+                                        }>
+                                        {c.is_active ? '● Active' : '○ Ended'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Right: actions */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <button
+                                    onClick={() => handleDeleteCampaignDonations(c)}
+                                    className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg transition-all"
+                                    style={{ background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }}>
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    <span className="hidden sm:inline">Clear Donations</span>
+                                    <span className="sm:hidden">Clear</span>
+                                  </button>
+                                  <button onClick={() => handleDownloadPDF(c)}
+                                    className="btn-primary text-xs sm:text-sm py-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span className="hidden sm:inline">Download PDF</span>
+                                    <span className="sm:hidden">PDF</span>
+                                  </button>
+                                </div>
                               </div>
+
+                              {/* Progress bar */}
+                              {amount > 0 && (
+                                <div className="px-4 pb-3">
+                                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#f0fdf4' }}>
+                                    <div className="h-full rounded-full"
+                                      style={{
+                                        width: `${Math.min((amount / (totalAmount || 1)) * 100, 100)}%`,
+                                        background: 'linear-gradient(90deg, #059669, #34d399)',
+                                        transition: 'width 1s ease',
+                                      }} />
+                                  </div>
+                                  <p className="text-[10px] text-gray-400 mt-1 text-right">
+                                    {totalAmount > 0 ? Math.round((amount / totalAmount) * 100) : 0}% of total raised
+                                  </p>
+                                </div>
+                              )}
                             </div>
-                            <button onClick={() => handleDownloadPDF(c)} className="btn-primary shrink-0">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              Download PDF
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -355,14 +591,34 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Toast notification */}
+      {/* ── Confirm Modal ── */}
+      <ConfirmModal
+        open={modal.open}
+        title={modal.title}
+        message={modal.message}
+        confirmLabel={modal.confirmLabel}
+        danger
+        onConfirm={modal.onConfirm}
+        onCancel={closeModal}
+      />
+
+      {/* ── Toast ── */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-slide-up">
-          <div className="flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-semibold text-white shadow-xl"
-            style={{ background: 'linear-gradient(135deg, #059669, #047857)', boxShadow: '0 8px 30px rgba(5,150,105,0.4)' }}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-slide-up pointer-events-none">
+          <div className="flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-semibold text-white shadow-2xl whitespace-nowrap"
+            style={toastType === 'success'
+              ? { background: 'linear-gradient(135deg,#059669,#047857)', boxShadow: '0 8px 30px rgba(5,150,105,0.5)' }
+              : { background: 'linear-gradient(135deg,#ef4444,#dc2626)', boxShadow: '0 8px 30px rgba(239,68,68,0.5)' }
+            }>
+            {toastType === 'success' ? (
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
             {toast}
           </div>
         </div>
