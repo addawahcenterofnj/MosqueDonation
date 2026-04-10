@@ -215,7 +215,7 @@ export default function AdminDashboard() {
   const handleMonthlySubmit = async (data: MonthlyReportFormData) => {
     setSaving(true);
     const payload = {
-      month: data.month + '-01',    // 'YYYY-MM' → 'YYYY-MM-01'
+      month: data.month.trim(),
       amount: parseFloat(data.amount),
       notes: data.notes || null,
     };

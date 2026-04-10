@@ -18,11 +18,7 @@ export default function MonthlyReportForm({ initial, onSubmit, onCancel, loading
 
   useEffect(() => {
     setForm(initial
-      ? {
-          month: initial.month.slice(0, 7),   // 'YYYY-MM-DD' → 'YYYY-MM'
-          amount: String(initial.amount),
-          notes: initial.notes ?? '',
-        }
+      ? { month: initial.month, amount: String(initial.amount), notes: initial.notes ?? '' }
       : EMPTY
     );
   }, [initial]);
@@ -30,7 +26,7 @@ export default function MonthlyReportForm({ initial, onSubmit, onCancel, loading
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!form.month) return setError('Please select a month.');
+    if (!form.month.trim()) return setError('Please enter a month name.');
     const amt = parseFloat(form.amount);
     if (!form.amount || isNaN(amt) || amt < 0) return setError('Amount must be 0 or greater.');
     await onSubmit(form);
@@ -51,11 +47,15 @@ export default function MonthlyReportForm({ initial, onSubmit, onCancel, loading
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-            Month <span className="text-red-400">*</span>
+            Month Name <span className="text-red-400">*</span>
           </label>
-          <input type="month" value={form.month}
+          <input
+            type="text"
+            value={form.month}
             onChange={e => setForm({ ...form, month: e.target.value })}
-            className="input" />
+            className="input"
+            placeholder="e.g. April 2025"
+          />
         </div>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">

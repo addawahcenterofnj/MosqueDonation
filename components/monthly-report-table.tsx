@@ -9,10 +9,6 @@ interface MonthlyReportTableProps {
   onDelete: (id: string) => void;
 }
 
-function formatMonth(dateStr: string) {
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-}
-
 export default function MonthlyReportTable({ reports, onEdit, onDelete }: MonthlyReportTableProps) {
   if (reports.length === 0) {
     return (
@@ -33,7 +29,7 @@ export default function MonthlyReportTable({ reports, onEdit, onDelete }: Monthl
           <div key={r.id} className="bg-white rounded-xl p-4"
             style={{ border: '1.5px solid #e5e7eb', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
             <div className="flex items-start justify-between mb-1">
-              <p className="font-bold text-gray-900">{formatMonth(r.month)}</p>
+              <p className="font-bold text-gray-900">{r.month}</p>
               <p className="font-bold text-base" style={{ color: '#d97706' }}>{formatCurrency(Number(r.amount))}</p>
             </div>
             {r.notes && <p className="text-xs text-gray-400 mb-3">{r.notes}</p>}
@@ -64,7 +60,7 @@ export default function MonthlyReportTable({ reports, onEdit, onDelete }: Monthl
           <tbody className="bg-white divide-y divide-amber-50">
             {reports.map(r => (
               <tr key={r.id} className="hover:bg-amber-50/40 transition-colors">
-                <td className="px-4 py-3.5 font-semibold text-gray-900 whitespace-nowrap">{formatMonth(r.month)}</td>
+                <td className="px-4 py-3.5 font-semibold text-gray-900 whitespace-nowrap">{r.month}</td>
                 <td className="px-4 py-3.5 text-center font-bold whitespace-nowrap" style={{ color: '#d97706' }}>
                   {formatCurrency(Number(r.amount))}
                 </td>
