@@ -26,26 +26,23 @@ export default function DonationsTable({ donations, showCampaign = true }: Donat
       {/* ── Mobile: card view ── */}
       <div className="flex flex-col gap-3 sm:hidden animate-slide-up">
         {donations.map((d, i) => (
-          <div
-            key={d.id}
-            className="bg-white rounded-xl p-4"
-            style={{
-              border: '1.5px solid #d1fae5',
-              boxShadow: '0 1px 8px rgba(0,0,0,0.05)',
-              animationDelay: `${i * 0.04}s`,
-            }}
-          >
+          <div key={d.id} className="bg-white rounded-xl p-4"
+            style={{ border: '1.5px solid #d1fae5', boxShadow: '0 1px 8px rgba(0,0,0,0.05)', animationDelay: `${i * 0.04}s` }}>
             <div className="flex items-start justify-between mb-2">
               <div>
                 <p className="font-semibold text-gray-900 text-sm">{d.donor_name}</p>
-                {d.donor_phone && (
-                  <p className="text-xs text-gray-400 mt-0.5">{d.donor_phone}</p>
+                {d.donor_phone && <p className="text-xs text-gray-400 mt-0.5">{d.donor_phone}</p>}
+                {d.donor_location && (
+                  <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {d.donor_location}
+                  </p>
                 )}
               </div>
-              <span
-                className="font-bold text-base shrink-0 ml-2"
-                style={{ color: '#059669' }}
-              >
+              <span className="font-bold text-base shrink-0 ml-2" style={{ color: '#059669' }}>
                 {formatCurrency(Number(d.amount))}
               </span>
             </div>
@@ -68,10 +65,8 @@ export default function DonationsTable({ donations, showCampaign = true }: Donat
       </div>
 
       {/* ── Desktop: table view ── */}
-      <div
-        className="hidden sm:block overflow-x-auto rounded-2xl animate-slide-up"
-        style={{ border: '1.5px solid #d1fae5', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}
-      >
+      <div className="hidden sm:block overflow-x-auto rounded-2xl animate-slide-up"
+        style={{ border: '1.5px solid #d1fae5', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
         <table className="min-w-full text-sm">
           <thead>
             <tr style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)' }}>
@@ -82,32 +77,37 @@ export default function DonationsTable({ donations, showCampaign = true }: Donat
               <th className="px-5 py-3.5 text-right font-semibold text-emerald-800 whitespace-nowrap">Amount</th>
               <th className="px-5 py-3.5 text-left font-semibold text-emerald-800 whitespace-nowrap">Date</th>
               <th className="px-5 py-3.5 text-left font-semibold text-emerald-800 whitespace-nowrap">Phone</th>
+              <th className="px-5 py-3.5 text-left font-semibold text-emerald-800 whitespace-nowrap">Location</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-emerald-50">
             {donations.map((d, i) => (
-              <tr
-                key={d.id}
-                className="transition-colors hover:bg-emerald-50/50"
-                style={{ animationDelay: `${i * 0.04}s` }}
-              >
+              <tr key={d.id} className="transition-colors hover:bg-emerald-50/50"
+                style={{ animationDelay: `${i * 0.04}s` }}>
                 <td className="px-5 py-3.5 font-medium text-gray-900 whitespace-nowrap">{d.donor_name}</td>
                 {showCampaign && (
                   <td className="px-5 py-3.5 whitespace-nowrap">
-                    {d.campaigns?.name ? (
-                      <span className="inline-flex items-center text-xs bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-0.5 rounded-full font-medium">
-                        {d.campaigns.name}
-                      </span>
-                    ) : '—'}
+                    {d.campaigns?.name
+                      ? <span className="inline-flex items-center text-xs bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-0.5 rounded-full font-medium">{d.campaigns.name}</span>
+                      : '—'}
                   </td>
                 )}
                 <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                  <span className="font-bold" style={{ color: '#059669' }}>
-                    {formatCurrency(Number(d.amount))}
-                  </span>
+                  <span className="font-bold" style={{ color: '#059669' }}>{formatCurrency(Number(d.amount))}</span>
                 </td>
                 <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap">{formatDate(d.donation_date)}</td>
                 <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap">{d.donor_phone || '—'}</td>
+                <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap">
+                  {d.donor_location
+                    ? <span className="flex items-center gap-1">
+                        <svg className="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {d.donor_location}
+                      </span>
+                    : '—'}
+                </td>
               </tr>
             ))}
           </tbody>

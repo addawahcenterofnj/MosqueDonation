@@ -12,17 +12,25 @@ interface DonationFormProps {
   loading?: boolean;
 }
 
-const EMPTY: DonationFormData = { donor_name: '', donor_phone: '', campaign_id: '', amount: '', donation_date: '', notes: '' };
+const EMPTY: DonationFormData = {
+  donor_name: '', donor_phone: '', donor_location: '',
+  campaign_id: '', amount: '', donation_date: '', notes: '',
+};
 
 export default function DonationForm({ initial, campaigns, onSubmit, onCancel, loading }: DonationFormProps) {
   const [form, setForm] = useState<DonationFormData>(EMPTY);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setForm(initial
-      ? { donor_name: initial.donor_name, donor_phone: initial.donor_phone ?? '', campaign_id: initial.campaign_id, amount: String(initial.amount), donation_date: initial.donation_date, notes: initial.notes ?? '' }
-      : EMPTY
-    );
+    setForm(initial ? {
+      donor_name: initial.donor_name,
+      donor_phone: initial.donor_phone ?? '',
+      donor_location: initial.donor_location ?? '',
+      campaign_id: initial.campaign_id,
+      amount: String(initial.amount),
+      donation_date: initial.donation_date,
+      notes: initial.notes ?? '',
+    } : EMPTY);
   }, [initial]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,27 +56,51 @@ export default function DonationForm({ initial, campaigns, onSubmit, onCancel, l
         </div>
       )}
 
+      {/* Row 1: Name + Phone */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
             Donor Name <span className="text-red-400">*</span>
           </label>
-          <input type="text" value={form.donor_name} onChange={e => setForm({ ...form, donor_name: e.target.value })}
+          <input type="text" value={form.donor_name}
+            onChange={e => setForm({ ...form, donor_name: e.target.value })}
             className="input" placeholder="Full name" />
         </div>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">Phone Number</label>
-          <input type="text" value={form.donor_phone} onChange={e => setForm({ ...form, donor_phone: e.target.value })}
+          <input type="text" value={form.donor_phone}
+            onChange={e => setForm({ ...form, donor_phone: e.target.value })}
             className="input" placeholder="Optional" />
         </div>
       </div>
 
+      {/* Row 2: Location */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+          Donor Location
+        </label>
+        <div className="relative">
+          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <input type="text" value={form.donor_location}
+            onChange={e => setForm({ ...form, donor_location: e.target.value })}
+            className="input pl-10" placeholder="e.g. New York, NJ, Edison…" />
+        </div>
+      </div>
+
+      {/* Row 3: Campaign + Amount */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
             Campaign <span className="text-red-400">*</span>
           </label>
-          <select value={form.campaign_id} onChange={e => setForm({ ...form, campaign_id: e.target.value })}
+          <select value={form.campaign_id}
+            onChange={e => setForm({ ...form, campaign_id: e.target.value })}
             className="input appearance-none cursor-pointer bg-white">
             <option value="">Select a campaign…</option>
             {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -79,7 +111,7 @@ export default function DonationForm({ initial, campaigns, onSubmit, onCancel, l
             Amount ($) <span className="text-red-400">*</span>
           </label>
           <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">$</span>
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm pointer-events-none">$</span>
             <input type="number" min="0.01" step="0.01" value={form.amount}
               onChange={e => setForm({ ...form, amount: e.target.value })}
               className="input pl-7" placeholder="0.00" />
@@ -87,13 +119,16 @@ export default function DonationForm({ initial, campaigns, onSubmit, onCancel, l
         </div>
       </div>
 
+      {/* Row 4: Date */}
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-1.5">
           Donation Date <span className="text-red-400">*</span>
         </label>
-        <input type="date" value={form.donation_date} onChange={e => setForm({ ...form, donation_date: e.target.value })} className="input" />
+        <input type="date" value={form.donation_date}
+          onChange={e => setForm({ ...form, donation_date: e.target.value })} className="input" />
       </div>
 
+      {/* Row 5: Notes */}
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-1.5">Notes</label>
         <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}

@@ -38,12 +38,25 @@ CREATE TABLE IF NOT EXISTS public.donations (
   id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   donor_name     TEXT NOT NULL,
   donor_phone    TEXT,
+  donor_location TEXT,
   campaign_id    UUID NOT NULL REFERENCES public.campaigns(id) ON DELETE RESTRICT,
   amount         NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
   donation_date  DATE NOT NULL,
   notes          TEXT,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- TABLE: monthly_reports
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.monthly_reports (
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  month      DATE NOT NULL UNIQUE,   -- stored as first day of month: YYYY-MM-01
+  amount     NUMERIC(12, 2) NOT NULL CHECK (amount >= 0),
+  notes      TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================
@@ -64,6 +77,10 @@ CREATE TRIGGER set_campaigns_updated_at
 
 CREATE TRIGGER set_donations_updated_at
   BEFORE UPDATE ON public.donations
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER set_monthly_reports_updated_at
+  BEFORE UPDATE ON public.monthly_reports
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 -- ============================================================
@@ -97,9 +114,10 @@ CREATE TRIGGER on_auth_user_created
 -- ROW LEVEL SECURITY
 -- ============================================================
 
-ALTER TABLE public.profiles  ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.campaigns ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.donations  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campaigns       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.donations       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.monthly_reports ENABLE ROW LEVEL SECURITY;
 
 -- Profiles: owner can read their own; admin can read all
 CREATE POLICY "profiles_select_own"
@@ -137,6 +155,28 @@ CREATE POLICY "donations_public_select"
   ON public.donations FOR SELECT
   TO anon, authenticated
   USING (TRUE);
+
+-- Monthly reports: public read
+CREATE POLICY "monthly_reports_public_select"
+  ON public.monthly_reports FOR SELECT
+  TO anon, authenticated
+  USING (TRUE);
+
+-- Monthly reports: admin write
+CREATE POLICY "monthly_reports_admin_insert"
+  ON public.monthly_reports FOR INSERT
+  TO authenticated
+  WITH CHECK (public.is_admin());
+
+CREATE POLICY "monthly_reports_admin_update"
+  ON public.monthly_reports FOR UPDATE
+  TO authenticated
+  USING (public.is_admin());
+
+CREATE POLICY "monthly_reports_admin_delete"
+  ON public.monthly_reports FOR DELETE
+  TO authenticated
+  USING (public.is_admin());
 
 -- Donations: admin write
 CREATE POLICY "donations_admin_insert"

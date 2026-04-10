@@ -4,11 +4,13 @@ import { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Donation } from '@/types/donation';
 import { Campaign } from '@/types/campaign';
+import { MonthlyReport } from '@/types/monthly-report';
 import Navbar from '@/components/navbar';
 import SummaryCards from '@/components/summary-cards';
 import SearchFilters from '@/components/search-filters';
 import DonationsTable from '@/components/donations-table';
 import CampaignList from '@/components/campaign-list';
+import MonthlyLiveReport from '@/components/monthly-live-report';
 import { getYearsFromDonations } from '@/lib/utils';
 
 function SkeletonCard() {
@@ -38,6 +40,7 @@ export default function PublicDashboardClient() {
   const supabase = createClient();
   const [donations, setDonations] = useState<Donation[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [monthlyReports, setMonthlyReports] = useState<MonthlyReport[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [searchName, setSearchName] = useState('');
@@ -46,9 +49,10 @@ export default function PublicDashboardClient() {
 
   useEffect(() => {
     async function load() {
-      const [{ data: donationsData }, { data: campaignsData }] = await Promise.all([
+      const [{ data: donationsData }, { data: campaignsData }, { data: monthlyData }] = await Promise.all([
         supabase.from('donations').select('*, campaigns(id, name)').order('donation_date', { ascending: false }),
         supabase.from('campaigns').select('*').order('created_at', { ascending: false }),
+        supabase.from('monthly_reports').select('*').order('month', { ascending: false }),
       ]);
       const rawDonations: Donation[] = donationsData ?? [];
       const rawCampaigns: Campaign[] = campaignsData ?? [];
@@ -58,6 +62,7 @@ export default function PublicDashboardClient() {
       }));
       setDonations(rawDonations);
       setCampaigns(enriched);
+      setMonthlyReports(monthlyData ?? []);
       setLoading(false);
     }
     load();
@@ -142,7 +147,7 @@ export default function PublicDashboardClient() {
         </section>
 
         {/* Campaigns */}
-        <section className="pb-8">
+        <section>
           <SectionHeader icon="🎯" title="Campaigns" />
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -158,6 +163,13 @@ export default function PublicDashboardClient() {
             <CampaignList campaigns={campaigns} />
           )}
         </section>
+
+        {/* Monthly Live Report */}
+        {!loading && monthlyReports.length > 0 && (
+          <section className="pb-8">
+            <MonthlyLiveReport reports={monthlyReports} />
+          </section>
+        )}
       </main>
 
       <footer

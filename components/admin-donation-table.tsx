@@ -32,6 +32,7 @@ export default function AdminDonationTable({ donations, onEdit, onDelete }: Admi
               <div>
                 <p className="font-bold text-gray-900 text-sm">{d.donor_name}</p>
                 {d.donor_phone && <p className="text-xs text-gray-400 mt-0.5">{d.donor_phone}</p>}
+                {d.donor_location && <p className="text-xs text-gray-400 mt-0.5">📍 {d.donor_location}</p>}
               </div>
               <p className="font-bold text-base shrink-0 ml-2" style={{ color: '#059669' }}>
                 {formatCurrency(Number(d.amount))}
@@ -62,7 +63,7 @@ export default function AdminDonationTable({ donations, onEdit, onDelete }: Admi
         <table className="min-w-full text-sm">
           <thead>
             <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
-              {['Donor', 'Campaign', 'Amount', 'Date', 'Phone', 'Actions'].map(h => (
+              {['Donor', 'Campaign', 'Amount', 'Date', 'Phone', 'Location', 'Actions'].map(h => (
                 <th key={h} className={`px-4 py-3.5 font-semibold text-gray-600 whitespace-nowrap ${h === 'Amount' || h === 'Actions' ? 'text-center' : 'text-left'}`}>
                   {h}
                 </th>
@@ -86,6 +87,17 @@ export default function AdminDonationTable({ donations, onEdit, onDelete }: Admi
                 </td>
                 <td className="px-4 py-3.5 text-gray-500 whitespace-nowrap">{formatDate(d.donation_date)}</td>
                 <td className="px-4 py-3.5 text-gray-500 whitespace-nowrap">{d.donor_phone || '—'}</td>
+                <td className="px-4 py-3.5 text-gray-500 whitespace-nowrap">
+                  {d.donor_location
+                    ? <span className="flex items-center gap-1">
+                        <svg className="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {d.donor_location}
+                      </span>
+                    : '—'}
+                </td>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center justify-center gap-2">
                     <button onClick={() => onEdit(d)}

@@ -2,6 +2,7 @@ export interface Donation {
   id: string;
   donor_name: string;
   donor_phone: string | null;
+  donor_location: string | null;
   campaign_id: string;
   amount: number;
   donation_date: string;
@@ -17,6 +18,7 @@ export interface Donation {
 export interface DonationFormData {
   donor_name: string;
   donor_phone: string;
+  donor_location: string;
   campaign_id: string;
   amount: string;
   donation_date: string;
