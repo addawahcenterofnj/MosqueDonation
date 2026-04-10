@@ -310,8 +310,8 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-1">
 
         {/* ── Section Tabs ── */}
-        <div className="flex gap-0 p-1 rounded-2xl mb-6 w-full"
-          style={{ background: '#e2e8f0', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div className="flex gap-1 p-1.5 rounded-2xl mb-6 w-full"
+          style={{ background: '#1e293b', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}>
           {navItems.map(({ key, label, icon }) => {
             const s = SECTION_STYLE[key];
             const isActive = activeSection === key;
@@ -319,8 +319,8 @@ export default function AdminDashboard() {
               <button key={key} onClick={() => setActiveSection(key)}
                 className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex-1 justify-center"
                 style={isActive
-                  ? { background: '#fff', color: s.accent, boxShadow: `0 2px 12px rgba(0,0,0,0.1), 0 0 0 1.5px ${s.accent}30` }
-                  : { color: '#64748b' }
+                  ? { background: '#fff', color: s.accent, boxShadow: `0 2px 12px rgba(0,0,0,0.2), 0 0 0 1.5px ${s.accent}40` }
+                  : { color: '#94a3b8', background: 'transparent' }
                 }>
                 <span className="text-sm sm:text-base">{icon}</span>
                 <span>{label}</span>
@@ -328,7 +328,7 @@ export default function AdminDashboard() {
                   <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full font-extrabold hidden sm:inline"
                     style={isActive
                       ? { background: s.light, color: s.accent, border: `1px solid ${s.border}` }
-                      : { background: '#f1f5f9', color: '#94a3b8' }
+                      : { background: 'rgba(255,255,255,0.08)', color: '#64748b' }
                     }>
                     {key === 'campaigns' ? campaigns.length
                       : key === 'donations' ? donations.length
