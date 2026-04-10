@@ -104,8 +104,8 @@ export default function AdminDashboard() {
     const { error } = editingCampaign
       ? await supabase.from('campaigns').update(data).eq('id', editingCampaign.id)
       : await supabase.from('campaigns').insert(data);
-    if (error) showToast('Something went wrong.', 'error');
-    else showToast(editingCampaign ? 'Campaign updated!' : 'Campaign created!');
+    if (error) { showToast(error.message || 'Something went wrong.', 'error'); setSaving(false); return; }
+    showToast(editingCampaign ? 'Campaign updated!' : 'Campaign created!');
     await fetchData();
     setShowCampaignForm(false); setEditingCampaign(null); setSaving(false);
   };
@@ -158,8 +158,8 @@ export default function AdminDashboard() {
     const { error } = editingDonation
       ? await supabase.from('donations').update(payload).eq('id', editingDonation.id)
       : await supabase.from('donations').insert(payload);
-    if (error) showToast('Something went wrong.', 'error');
-    else showToast(editingDonation ? 'Donation updated!' : 'Donation added!');
+    if (error) { showToast(error.message || 'Something went wrong.', 'error'); setSaving(false); return; }
+    showToast(editingDonation ? 'Donation updated!' : 'Donation added!');
     await fetchData();
     setShowDonationForm(false); setEditingDonation(null); setSaving(false);
   };
@@ -222,8 +222,15 @@ export default function AdminDashboard() {
     const { error } = editingMonthly
       ? await supabase.from('monthly_reports').update(payload).eq('id', editingMonthly.id)
       : await supabase.from('monthly_reports').insert(payload);
-    if (error) showToast('Something went wrong.', 'error');
-    else showToast(editingMonthly ? 'Entry updated!' : 'Monthly entry added!');
+    if (error) {
+      const msg = error.code === '23505'
+        ? 'An entry for that month already exists.'
+        : error.message || 'Something went wrong.';
+      showToast(msg, 'error');
+      setSaving(false);
+      return;
+    }
+    showToast(editingMonthly ? 'Entry updated!' : 'Monthly entry added!');
     await fetchData();
     setShowMonthlyForm(false); setEditingMonthly(null); setSaving(false);
   };
