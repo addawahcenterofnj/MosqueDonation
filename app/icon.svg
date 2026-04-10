@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Background circle -->
+  <rect width="64" height="64" rx="14" fill="#064e3b"/>
+
+  <!-- Main dome -->
+  <path d="M20 36 Q20 24 32 22 Q44 24 44 36 Z" fill="#34d399"/>
+
+  <!-- Dome crescent top -->
+  <circle cx="32" cy="20" r="3.5" fill="#6ee7b7"/>
+  <circle cx="33.4" cy="19" r="2.8" fill="#064e3b"/>
+
+  <!-- Minarets -->
+  <rect x="13" y="28" width="5" height="8" rx="1" fill="#6ee7b7"/>
+  <path d="M13 28 Q15.5 24 18 28 Z" fill="#a7f3d0"/>
+  <rect x="46" y="28" width="5" height="8" rx="1" fill="#6ee7b7"/>
+  <path d="M46 28 Q48.5 24 51 28 Z" fill="#a7f3d0"/>
+
+  <!-- Main building base -->
+  <rect x="16" y="36" width="32" height="12" rx="2" fill="#059669"/>
+
+  <!-- Door arch -->
+  <path d="M28 48 L28 41 Q32 38 36 41 L36 48 Z" fill="#064e3b"/>
+
+  <!-- Windows on minarets -->
+  <rect x="14.5" y="30" width="2" height="2.5" rx="0.5" fill="#064e3b"/>
+  <rect x="47.5" y="30" width="2" height="2.5" rx="0.5" fill="#064e3b"/>
+
+  <!-- Ground line -->
+  <rect x="10" y="48" width="44" height="2" rx="1" fill="#047857"/>
+</svg>
