@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(npm install:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m 'Fix middleware to gracefully handle missing Supabase env vars:*)",
+      "Bash(git push:*)",
+      "Bash(git commit -m 'Redesign: modern UI, animations, mobile-first responsive layout:*)"
     ]
   }
 }

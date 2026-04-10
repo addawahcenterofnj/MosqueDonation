@@ -12,38 +12,17 @@ interface DonationFormProps {
   loading?: boolean;
 }
 
-const EMPTY: DonationFormData = {
-  donor_name: '',
-  donor_phone: '',
-  campaign_id: '',
-  amount: '',
-  donation_date: '',
-  notes: '',
-};
+const EMPTY: DonationFormData = { donor_name: '', donor_phone: '', campaign_id: '', amount: '', donation_date: '', notes: '' };
 
-export default function DonationForm({
-  initial,
-  campaigns,
-  onSubmit,
-  onCancel,
-  loading,
-}: DonationFormProps) {
+export default function DonationForm({ initial, campaigns, onSubmit, onCancel, loading }: DonationFormProps) {
   const [form, setForm] = useState<DonationFormData>(EMPTY);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (initial) {
-      setForm({
-        donor_name: initial.donor_name,
-        donor_phone: initial.donor_phone ?? '',
-        campaign_id: initial.campaign_id,
-        amount: String(initial.amount),
-        donation_date: initial.donation_date,
-        notes: initial.notes ?? '',
-      });
-    } else {
-      setForm(EMPTY);
-    }
+    setForm(initial
+      ? { donor_name: initial.donor_name, donor_phone: initial.donor_phone ?? '', campaign_id: initial.campaign_id, amount: String(initial.amount), donation_date: initial.donation_date, notes: initial.notes ?? '' }
+      : EMPTY
+    );
   }, [initial]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,112 +37,82 @@ export default function DonationForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5 animate-slide-down">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 text-sm">
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
           {error}
         </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Donor Name <span className="text-red-500">*</span>
+          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            Donor Name <span className="text-red-400">*</span>
           </label>
-          <input
-            type="text"
-            value={form.donor_name}
-            onChange={(e) => setForm({ ...form, donor_name: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            placeholder="Full name"
-          />
+          <input type="text" value={form.donor_name} onChange={e => setForm({ ...form, donor_name: e.target.value })}
+            className="input" placeholder="Full name" />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-          <input
-            type="text"
-            value={form.donor_phone}
-            onChange={(e) => setForm({ ...form, donor_phone: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            placeholder="Optional"
-          />
+          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Phone Number</label>
+          <input type="text" value={form.donor_phone} onChange={e => setForm({ ...form, donor_phone: e.target.value })}
+            className="input" placeholder="Optional" />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Campaign <span className="text-red-500">*</span>
+          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            Campaign <span className="text-red-400">*</span>
           </label>
-          <select
-            value={form.campaign_id}
-            onChange={(e) => setForm({ ...form, campaign_id: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-          >
-            <option value="">Select a campaign</option>
-            {campaigns.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
+          <select value={form.campaign_id} onChange={e => setForm({ ...form, campaign_id: e.target.value })}
+            className="input appearance-none cursor-pointer bg-white">
+            <option value="">Select a campaign…</option>
+            {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Amount ($) <span className="text-red-500">*</span>
+          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            Amount ($) <span className="text-red-400">*</span>
           </label>
-          <input
-            type="number"
-            min="0.01"
-            step="0.01"
-            value={form.amount}
-            onChange={(e) => setForm({ ...form, amount: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            placeholder="0.00"
-          />
+          <div className="relative">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">$</span>
+            <input type="number" min="0.01" step="0.01" value={form.amount}
+              onChange={e => setForm({ ...form, amount: e.target.value })}
+              className="input pl-7" placeholder="0.00" />
+          </div>
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Donation Date <span className="text-red-500">*</span>
+        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+          Donation Date <span className="text-red-400">*</span>
         </label>
-        <input
-          type="date"
-          value={form.donation_date}
-          onChange={(e) => setForm({ ...form, donation_date: e.target.value })}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-        />
+        <input type="date" value={form.donation_date} onChange={e => setForm({ ...form, donation_date: e.target.value })} className="input" />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-        <textarea
-          value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
-          rows={2}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-          placeholder="Optional notes..."
-        />
+        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Notes</label>
+        <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
+          rows={2} className="input resize-none" placeholder="Optional notes…" />
       </div>
 
-      <div className="flex gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex-1 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-60 text-white font-medium py-2 rounded-lg transition-colors"
-        >
-          {loading ? 'Saving...' : initial ? 'Update Donation' : 'Add Donation'}
+      <div className="flex gap-3 pt-1">
+        <button type="submit" disabled={loading} className="btn-primary flex-1 py-2.5">
+          {loading ? (
+            <span className="flex items-center gap-2 justify-center">
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Saving…
+            </span>
+          ) : initial ? 'Update Donation' : 'Add Donation'}
         </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 rounded-lg transition-colors"
-        >
-          Cancel
-        </button>
+        <button type="button" onClick={onCancel} className="btn-ghost flex-1 py-2.5">Cancel</button>
       </div>
     </form>
   );

@@ -15,84 +15,102 @@ export default async function CampaignPage({ params }: PageProps) {
 
   const [{ data: campaign }, { data: donations }] = await Promise.all([
     supabase.from('campaigns').select('*').eq('id', id).single(),
-    supabase
-      .from('donations')
-      .select('*')
-      .eq('campaign_id', id)
-      .order('donation_date', { ascending: false }),
+    supabase.from('donations').select('*').eq('campaign_id', id).order('donation_date', { ascending: false }),
   ]);
 
   if (!campaign) notFound();
 
   const totalAmount = (donations ?? []).reduce((sum, d) => sum + Number(d.amount), 0);
+  const donationList = donations ?? [];
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: '#f0fdf4' }}>
       <Navbar />
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Back link */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 text-sm text-emerald-700 hover:text-emerald-900 font-medium"
-        >
-          ← Back to Dashboard
-        </Link>
 
-        {/* Campaign header */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8">
-          <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{campaign.name}</h1>
+      {/* Campaign hero */}
+      <div className="relative overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #064e3b 0%, #065f46 60%, #047857 100%)' }}>
+        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-10"
+          style={{ background: 'radial-gradient(circle, #6ee7b7, transparent)' }} />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+          <Link href="/"
+            className="inline-flex items-center gap-1.5 text-emerald-300 hover:text-white text-sm font-medium transition-colors mb-5 group">
+            <svg className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Dashboard
+          </Link>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="animate-slide-down">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2">{campaign.name}</h1>
               {campaign.description && (
-                <p className="text-gray-500 mt-1 max-w-2xl">{campaign.description}</p>
+                <p className="text-emerald-200 text-base max-w-2xl leading-relaxed">{campaign.description}</p>
               )}
             </div>
-            <span
-              className={`shrink-0 text-sm font-medium px-3 py-1 rounded-full ${
-                campaign.is_active
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : 'bg-gray-100 text-gray-500'
-              }`}
-            >
-              {campaign.is_active ? 'Active' : 'Ended'}
+            <span className="shrink-0 text-sm font-bold px-4 py-1.5 rounded-full animate-fade-in"
+              style={campaign.is_active
+                ? { background: 'rgba(52,211,153,0.2)', color: '#6ee7b7', border: '1px solid rgba(110,231,183,0.4)' }
+                : { background: 'rgba(255,255,255,0.1)', color: '#d1d5db', border: '1px solid rgba(255,255,255,0.2)' }
+              }>
+              {campaign.is_active ? '● Active' : '○ Ended'}
             </span>
           </div>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-            <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Total Collected</p>
-              <p className="text-2xl font-bold text-emerald-700">{formatCurrency(totalAmount)}</p>
-            </div>
-            <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Total Donations</p>
-              <p className="text-2xl font-bold text-blue-700">{(donations ?? []).length}</p>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Date Range</p>
-              <p className="text-sm font-medium text-gray-700">
-                {campaign.start_date || campaign.end_date ? (
-                  <>
-                    {campaign.start_date ? formatDate(campaign.start_date) : 'N/A'}
-                    {' – '}
-                    {campaign.end_date ? formatDate(campaign.end_date) : 'Ongoing'}
-                  </>
-                ) : (
-                  'Not specified'
-                )}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        {/* Stats row */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 -mt-8 relative z-10">
+          {[
+            {
+              label: 'Total Collected', value: formatCurrency(totalAmount),
+              bg: '#fff', border: '#a7f3d0', color: '#059669', icon: '💰',
+            },
+            {
+              label: 'Total Donations', value: String(donationList.length),
+              bg: '#eff6ff', border: '#bfdbfe', color: '#2563eb', icon: '📋',
+            },
+            {
+              label: 'Date Range',
+              value: campaign.start_date || campaign.end_date
+                ? `${campaign.start_date ? formatDate(campaign.start_date) : 'N/A'} – ${campaign.end_date ? formatDate(campaign.end_date) : 'Ongoing'}`
+                : 'Not specified',
+              bg: '#f5f3ff', border: '#ddd6fe', color: '#7c3aed', icon: '📅',
+              small: true,
+            },
+          ].map((s) => (
+            <div key={s.label}
+              className="rounded-2xl p-5 animate-slide-up"
+              style={{ background: s.bg, border: `1.5px solid ${s.border}`, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xl">{s.icon}</span>
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">{s.label}</p>
+              </div>
+              <p className={`font-bold ${s.small ? 'text-sm' : 'text-2xl'}`} style={{ color: s.color }}>
+                {s.value}
               </p>
             </div>
-          </div>
+          ))}
         </div>
 
-        {/* Donations table */}
-        <section>
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">Donations</h2>
-          <DonationsTable donations={donations ?? []} showCampaign={false} />
+        {/* Donations */}
+        <section className="pb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-lg">💳</span>
+            <h2 className="text-lg font-bold text-gray-800">Donations</h2>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+              style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }}>
+              {donationList.length} record{donationList.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <DonationsTable donations={donationList} showCampaign={false} />
         </section>
       </main>
 
-      <footer className="py-4 text-center text-xs text-gray-400 border-t border-gray-200">
-        Mosque Donation Tracker &mdash; Built with transparency in mind.
+      <footer className="py-6 text-center text-xs font-medium"
+        style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', borderTop: '1px solid #a7f3d0', color: '#065f46' }}>
+        🕌 Mosque Donation Tracker — Built with transparency for our community
       </footer>
     </div>
   );
