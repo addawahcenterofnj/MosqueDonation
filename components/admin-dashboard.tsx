@@ -162,8 +162,8 @@ export default function AdminDashboard() {
   }, [donations]);
 
   const filteredDonations = useMemo(() => donations.filter(d => {
-    const dt = new Date(d.donation_date);
-    return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth;
+    const [y, m] = d.donation_date.split('-').map(Number);
+    return y === selectedYear && m - 1 === selectedMonth;
   }), [donations, selectedYear, selectedMonth]);
 
   const filteredTotal = filteredDonations.reduce((s, d) => s + Number(d.amount), 0);
@@ -265,8 +265,8 @@ export default function AdminDashboard() {
                   {MONTHS.map((name, idx) => {
                     const isSelected = idx === selectedMonth;
                     const hasDonations = donations.some(d => {
-                      const dt = new Date(d.donation_date);
-                      return dt.getFullYear() === selectedYear && dt.getMonth() === idx;
+                      const [y, m] = d.donation_date.split('-').map(Number);
+                      return y === selectedYear && m - 1 === idx;
                     });
                     return (
                       <button

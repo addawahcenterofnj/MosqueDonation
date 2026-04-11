@@ -59,8 +59,8 @@ export default function PublicDashboardClient() {
   const currentMonthLabel = now.toLocaleString('default', { month: 'long', year: 'numeric' });
 
   const currentMonthDonations = useMemo(() => donations.filter(d => {
-    const dt = new Date(d.donation_date);
-    return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth();
+    const [y, m] = d.donation_date.split('-').map(Number);
+    return y === now.getFullYear() && m - 1 === now.getMonth();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [donations]);
 
@@ -83,15 +83,15 @@ export default function PublicDashboardClient() {
   const availableYears = useMemo(() => {
     const yrs = new Set<number>();
     yrs.add(now.getFullYear());
-    for (const d of donations) yrs.add(new Date(d.donation_date).getFullYear());
+    for (const d of donations) yrs.add(Number(d.donation_date.split('-')[0]));
     return [...yrs].sort((a, b) => b - a);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [donations]);
 
   // ── History browser — filter by selected year + month ─
   const historyDonations = useMemo(() => donations.filter(d => {
-    const dt = new Date(d.donation_date);
-    return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth;
+    const [y, m] = d.donation_date.split('-').map(Number);
+    return y === selectedYear && m - 1 === selectedMonth;
   }), [donations, selectedYear, selectedMonth]);
 
   const historyDonors = useMemo(() => {
@@ -203,8 +203,8 @@ export default function PublicDashboardClient() {
                 const shortName = name.slice(0, 3);
                 // Count donations for this month+year (for dot indicator)
                 const hasDonations = !loading && donations.some(d => {
-                  const dt = new Date(d.donation_date);
-                  return dt.getFullYear() === selectedYear && dt.getMonth() === idx;
+                  const [y, m] = d.donation_date.split('-').map(Number);
+                  return y === selectedYear && m - 1 === idx;
                 });
 
                 return (
