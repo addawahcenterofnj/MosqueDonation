@@ -13,7 +13,8 @@
       "Bash(git commit -m 'Fix icon/placeholder overlap by moving custom CSS into @layer components:*)",
       "Bash(git commit -m 'Add pulsing LIVE badge to navbar:*)",
       "Bash(git commit:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

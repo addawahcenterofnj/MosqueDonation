@@ -6,10 +6,12 @@ import { useTheme } from 'next-themes';
 import { createClient } from '@/lib/supabase/client';
 import { Campaign, CampaignFormData } from '@/types/campaign';
 import { Donation, DonationFormData } from '@/types/donation';
+import { Donor } from '@/types/donor';
 import { MonthlyReport, MonthlyReportFormData } from '@/types/monthly-report';
 import Navbar from '@/components/navbar';
 import CampaignForm from '@/components/campaign-form';
 import DonationForm from '@/components/donation-form';
+import AddDonationForm from '@/components/add-donation-form';
 import MonthlyReportForm from '@/components/monthly-report-form';
 import AdminCampaignTable from '@/components/admin-campaign-table';
 import AdminDonationTable from '@/components/admin-donation-table';
@@ -175,9 +177,29 @@ export default function AdminDashboard() {
     });
   };
 
+  // ── Donor lookup ───────────────────────────────────────
+  const lookupDonor = useCallback(async (phone: string): Promise<Donor | null> => {
+    const { data } = await supabase.from('donors').select('*').eq('phone', phone).single();
+    return data ?? null;
+  }, [supabase]);
+
   // ── Donation CRUD ──────────────────────────────────────
   const handleDonationSubmit = async (data: DonationFormData) => {
     setSaving(true);
+
+    // Upsert donor record when phone is provided (new donations)
+    if (!editingDonation && data.donor_phone) {
+      await supabase.from('donors').upsert(
+        {
+          phone: data.donor_phone,
+          name: data.donor_name,
+          location: data.donor_location || null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'phone', ignoreDuplicates: false }
+      );
+    }
+
     const payload = {
       donor_name: data.donor_name,
       donor_phone: data.donor_phone || null,
@@ -458,8 +480,11 @@ export default function AdminDashboard() {
                   )}
                 >
                   {showDonationForm
-                    ? <DonationForm initial={editingDonation} campaigns={campaigns} onSubmit={handleDonationSubmit}
-                        onCancel={() => { setShowDonationForm(false); setEditingDonation(null); }} loading={saving} />
+                    ? editingDonation
+                      ? <DonationForm initial={editingDonation} campaigns={campaigns} onSubmit={handleDonationSubmit}
+                          onCancel={() => { setShowDonationForm(false); setEditingDonation(null); }} loading={saving} />
+                      : <AddDonationForm campaigns={campaigns} onLookupDonor={lookupDonor} onSubmit={handleDonationSubmit}
+                          onCancel={() => { setShowDonationForm(false); }} loading={saving} />
                     : <AdminDonationTable donations={donations} onEdit={handleDonationEdit} onDelete={handleDonationDelete} />
                   }
                 </SectionCard>
