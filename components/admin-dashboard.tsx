@@ -6,13 +6,14 @@ import { createClient } from '@/lib/supabase/client';
 import { Donation, DonationFormData } from '@/types/donation';
 import { Donor } from '@/types/donor';
 import Navbar from '@/components/navbar';
-import AddDonationForm from '@/components/add-donation-form';
+import AddDonationForm, { SplitDonationBase } from '@/components/add-donation-form';
 import DonationForm from '@/components/donation-form';
 import AdminDonationTable from '@/components/admin-donation-table';
 import YearlyReportTable from '@/components/yearly-report-table';
 import ConfirmModal from '@/components/confirm-modal';
 import { formatCurrency } from '@/lib/utils';
 import { generateYearlyReportPDF, generateMonthlyDonorReportPDF } from '@/lib/pdf';
+import DonorSearch from '@/components/donor-search';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -122,6 +123,40 @@ export default function AdminDashboard() {
     setShowDonationForm(false); setEditingDonation(null); setSaving(false);
   };
 
+  const handleSplitSubmit = async (base: SplitDonationBase, year: number) => {
+    setSaving(true);
+
+    if (base.donor_phone) {
+      await supabase.from('donors').upsert(
+        { phone: base.donor_phone, name: base.donor_name, location: base.donor_location || null, updated_at: new Date().toISOString() },
+        { onConflict: 'phone', ignoreDuplicates: false }
+      );
+    }
+
+    const total = parseFloat(base.amount);
+    // Distribute evenly; last month absorbs any rounding remainder
+    const perMonth = Math.floor((total / 12) * 100) / 100;
+    const lastMonth = Math.round((total - perMonth * 11) * 100) / 100;
+
+    const records = Array.from({ length: 12 }, (_, idx) => ({
+      donor_name: base.donor_name,
+      donor_phone: base.donor_phone || null,
+      donor_location: base.donor_location || null,
+      campaign_id: null,
+      amount: idx === 11 ? lastMonth : perMonth,
+      donation_date: `${year}-${String(idx + 1).padStart(2, '0')}-01`,
+      notes: base.notes || null,
+    }));
+
+    const { error } = await supabase.from('donations').insert(records);
+    if (error) { showToast(error.message || 'Something went wrong.', 'error'); setSaving(false); return; }
+
+    showToast(`Split across all 12 months of ${year}!`);
+    await fetchData();
+    setShowDonationForm(false);
+    setSaving(false);
+  };
+
   const handleDonationEdit = (donation: Donation) => {
     setEditingDonation(donation);
     setShowDonationForm(true);
@@ -161,7 +196,7 @@ export default function AdminDashboard() {
   const availableYears = useMemo(() => {
     const yrs = new Set<number>();
     yrs.add(now.getFullYear());
-    for (const d of donations) yrs.add(new Date(d.donation_date).getFullYear());
+    for (const d of donations) yrs.add(Number(d.donation_date.split('-')[0]));
     return [...yrs].sort((a, b) => b - a);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [donations]);
@@ -377,6 +412,7 @@ export default function AdminDashboard() {
                       initialMonth={selectedMonthStr}
                       onLookupDonor={lookupDonor}
                       onSubmit={handleDonationSubmit}
+                      onSubmitSplit={handleSplitSubmit}
                       onCancel={() => setShowDonationForm(false)}
                       loading={saving}
                     />
@@ -390,6 +426,9 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
+            {/* ── Donor Lookup ── */}
+            <DonorSearch donations={donations} />
+
             {/* ── Yearly Report ── */}
             <YearlyReportTable
               donations={donations}

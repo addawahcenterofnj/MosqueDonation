@@ -3,16 +3,29 @@
 import { useState } from 'react';
 import { Donor } from '@/types/donor';
 import { DonationFormData } from '@/types/donation';
+import { formatCurrency } from '@/lib/utils';
+
+/** Donor details without a date — used for split-year submissions */
+export interface SplitDonationBase {
+  donor_name: string;
+  donor_phone: string;
+  donor_location: string;
+  amount: string;
+  notes: string;
+}
 
 interface AddDonationFormProps {
   initialMonth?: string;           // "YYYY-MM" — pre-fills the month picker
   onLookupDonor: (phone: string) => Promise<Donor | null>;
   onSubmit: (data: DonationFormData) => Promise<void>;
+  /** Called when admin chooses "Split across year" */
+  onSubmitSplit: (base: SplitDonationBase, year: number) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
 }
 
 type Step = 'lookup' | 'fill';
+type Mode = 'single' | 'split';
 
 function formatPhone(raw: string) {
   const digits = raw.replace(/\D/g, '').slice(0, 10);
@@ -28,10 +41,17 @@ function currentYearMonth() {
   return `${y}-${m}`;
 }
 
+const CURRENT_YEAR = new Date().getFullYear();
+// Offer 6 past years + next year
+const YEAR_OPTIONS = Array.from({ length: 8 }, (_, i) => CURRENT_YEAR - 5 + i).filter(
+  y => y <= CURRENT_YEAR + 1
+);
+
 export default function AddDonationForm({
   initialMonth,
   onLookupDonor,
   onSubmit,
+  onSubmitSplit,
   onCancel,
   loading,
 }: AddDonationFormProps) {
@@ -47,7 +67,9 @@ export default function AddDonationForm({
   const [newLocation, setNewLocation] = useState('');
 
   // Donation fields
+  const [mode, setMode] = useState<Mode>('single');
   const [month, setMonth] = useState(initialMonth ?? currentYearMonth());
+  const [splitYear, setSplitYear] = useState(CURRENT_YEAR);
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [formError, setFormError] = useState('');
@@ -77,6 +99,13 @@ export default function AddDonationForm({
     setFormError('');
   };
 
+  // Per-month preview for split mode
+  const totalAmt = parseFloat(amount);
+  const perMonth =
+    !isNaN(totalAmt) && totalAmt > 0
+      ? Math.round((totalAmt / 12) * 100) / 100
+      : null;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
@@ -85,19 +114,26 @@ export default function AddDonationForm({
     const donorLocation = foundDonor ? (foundDonor.location ?? '') : newLocation.trim();
 
     if (isNewDonor && !newName.trim()) return setFormError('Donor name is required.');
-    if (!month) return setFormError('Please select a contribution month.');
     const amt = parseFloat(amount);
     if (!amount || isNaN(amt) || amt <= 0) return setFormError('Amount must be greater than 0.');
 
-    await onSubmit({
-      donor_name: donorName,
-      donor_phone: digits,
-      donor_location: donorLocation,
-      campaign_id: '',               // no campaign — handled as null in dashboard
-      amount,
-      donation_date: `${month}-01`,  // first day of the selected month
-      notes,
-    });
+    if (mode === 'split') {
+      await onSubmitSplit(
+        { donor_name: donorName, donor_phone: digits, donor_location: donorLocation, amount, notes },
+        splitYear
+      );
+    } else {
+      if (!month) return setFormError('Please select a contribution month.');
+      await onSubmit({
+        donor_name: donorName,
+        donor_phone: digits,
+        donor_location: donorLocation,
+        campaign_id: '',
+        amount,
+        donation_date: `${month}-01`,
+        notes,
+      });
+    }
   };
 
   return (
@@ -247,24 +283,83 @@ export default function AddDonationForm({
             )}
 
             <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Contribution Month */}
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
-                    Contribution Month <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="month"
-                    value={month}
-                    onChange={e => setMonth(e.target.value)}
-                    className="input"
-                  />
+
+              {/* ── Contribution mode toggle ── */}
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--c-text)' }}>
+                  Contribution Type
+                </label>
+                <div className="flex rounded-xl overflow-hidden"
+                  style={{ border: '1.5px solid var(--c-border-2)', background: 'var(--c-bg)' }}>
+                  {(['single', 'split'] as Mode[]).map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setMode(m)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold transition-all duration-150"
+                      style={mode === m ? {
+                        background: 'linear-gradient(135deg, #059669, #047857)',
+                        color: 'white',
+                      } : {
+                        color: 'var(--c-text-2)',
+                      }}
+                    >
+                      {m === 'single' ? (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          Single Month
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                          </svg>
+                          Split Year
+                        </>
+                      )}
+                    </button>
+                  ))}
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Month or Year picker */}
+                {mode === 'single' ? (
+                  <div>
+                    <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
+                      Contribution Month <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="month"
+                      value={month}
+                      onChange={e => setMonth(e.target.value)}
+                      className="input"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
+                      Contribution Year <span className="text-red-400">*</span>
+                    </label>
+                    <select
+                      value={splitYear}
+                      onChange={e => setSplitYear(Number(e.target.value))}
+                      className="input appearance-none cursor-pointer"
+                    >
+                      {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  </div>
+                )}
 
                 {/* Amount */}
                 <div>
                   <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
-                    Amount ($) <span className="text-red-400">*</span>
+                    {mode === 'split' ? 'Total Amount ($)' : 'Amount ($)'}{' '}
+                    <span className="text-red-400">*</span>
                   </label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-sm pointer-events-none"
@@ -279,6 +374,22 @@ export default function AddDonationForm({
                   </div>
                 </div>
               </div>
+
+              {/* Split preview banner */}
+              {mode === 'split' && perMonth !== null && (
+                <div className="flex items-center gap-3 rounded-xl px-4 py-3"
+                  style={{ background: 'var(--c-accent-bg)', border: '1.5px solid var(--c-border-2)' }}>
+                  <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--c-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm" style={{ color: 'var(--c-accent)' }}>
+                    <span className="font-bold">{formatCurrency(perMonth)}</span>
+                    <span className="font-medium"> × 12 months will be recorded across all of </span>
+                    <span className="font-bold">{splitYear}</span>
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>Notes</label>
@@ -303,7 +414,9 @@ export default function AddDonationForm({
                   </svg>
                   Saving…
                 </span>
-              ) : isNewDonor ? 'Add Donor & Donation' : 'Add Donation'}
+              ) : mode === 'split'
+                ? (isNewDonor ? 'Add Donor & Split Year' : 'Split Across Year')
+                : (isNewDonor ? 'Add Donor & Donation' : 'Add Donation')}
             </button>
             <button type="button" onClick={onCancel} className="btn-ghost flex-1 py-2.5">Cancel</button>
           </div>

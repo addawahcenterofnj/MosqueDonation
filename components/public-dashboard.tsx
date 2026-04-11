@@ -6,6 +6,7 @@ import { Donation } from '@/types/donation';
 import Navbar from '@/components/navbar';
 import YearlyReportTable from '@/components/yearly-report-table';
 import { formatCurrency } from '@/lib/utils';
+import DonorSearch from '@/components/donor-search';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -133,52 +134,51 @@ export default function PublicDashboardClient() {
         <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full opacity-10 pointer-events-none"
           style={{ background: 'radial-gradient(circle, #34d399, transparent)' }} />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 animate-slide-down">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 animate-slide-down">
             {[
               {
                 label: `${now.getFullYear()} Donations`,
                 value: loading ? '—' : String(thisYearDonations.length),
+                sub: loading ? '' : `total records this year`,
                 icon: (
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
                       d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 ),
-                iconBg: 'rgba(255,255,255,0.15)',
                 iconColor: '#a7f3d0',
-                valueCls: 'text-white',
-                labelCls: 'text-emerald-300',
               },
               {
                 label: `${now.getFullYear()} Total Raised`,
                 value: loading ? '—' : formatCurrency(thisYearTotal),
+                sub: loading ? '' : `across all donors`,
                 icon: (
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
                       d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 ),
-                iconBg: 'rgba(255,255,255,0.15)',
                 iconColor: '#6ee7b7',
-                valueCls: 'text-white',
-                labelCls: 'text-emerald-300',
               },
             ].map(card => (
               <div key={card.label}
-                className="flex items-center gap-3 sm:gap-4 rounded-2xl px-4 sm:px-6 py-4 sm:py-5"
+                className="flex items-center gap-4 rounded-2xl px-5 py-4 sm:px-6 sm:py-5"
                 style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: card.iconBg, color: card.iconColor }}>
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: 'rgba(255,255,255,0.15)', color: card.iconColor }}>
                   {card.icon}
                 </div>
-                <div className="min-w-0">
-                  <p className={`text-xs font-semibold uppercase tracking-widest mb-0.5 truncate ${card.labelCls}`}>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-emerald-300 mb-0.5">
                     {card.label}
                   </p>
-                  <p className={`text-xl sm:text-2xl font-extrabold ${card.valueCls}`}>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
                     {card.value}
                   </p>
+                  {card.sub && (
+                    <p className="text-xs mt-0.5 text-emerald-400 opacity-80">{card.sub}</p>
+                  )}
                 </div>
               </div>
             ))}
@@ -310,6 +310,15 @@ export default function PublicDashboardClient() {
               showPhone
             />
           )}
+        </section>
+
+        {/* ── Donor Lookup ── */}
+        <section className="pb-2">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-lg">🔍</span>
+            <h2 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>Donor Lookup</h2>
+          </div>
+          <DonorSearch donations={donations} />
         </section>
 
         {/* ── Yearly Report ── */}
