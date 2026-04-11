@@ -1,5 +1,9 @@
 -- Run this in your Supabase SQL editor (https://app.supabase.com → SQL Editor)
 
+-- Allow donations without a campaign (month-based donations)
+ALTER TABLE donations ALTER COLUMN campaign_id DROP NOT NULL;
+
+
 CREATE TABLE IF NOT EXISTS donors (
   phone       TEXT PRIMARY KEY,
   name        TEXT NOT NULL,

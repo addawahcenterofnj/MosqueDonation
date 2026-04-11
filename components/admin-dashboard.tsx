@@ -102,7 +102,7 @@ export default function AdminDashboard() {
       donor_name: data.donor_name,
       donor_phone: data.donor_phone || null,
       donor_location: data.donor_location || null,
-      campaign_id: data.campaign_id,
+      campaign_id: data.campaign_id || null,
       amount: parseFloat(data.amount),
       donation_date: data.donation_date,
       notes: data.notes || null,
@@ -279,7 +279,6 @@ export default function AdminDashboard() {
                   />
                 ) : (
                   <AddDonationForm
-                    campaigns={campaigns}
                     onLookupDonor={lookupDonor}
                     onSubmit={handleDonationSubmit}
                     onCancel={() => setShowDonationForm(false)}

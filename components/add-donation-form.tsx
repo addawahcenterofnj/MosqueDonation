@@ -1,12 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Campaign } from '@/types/campaign';
 import { Donor } from '@/types/donor';
 import { DonationFormData } from '@/types/donation';
 
 interface AddDonationFormProps {
-  campaigns: Campaign[];
   onLookupDonor: (phone: string) => Promise<Donor | null>;
   onSubmit: (data: DonationFormData) => Promise<void>;
   onCancel: () => void;
@@ -22,8 +20,14 @@ function formatPhone(raw: string) {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
+function currentYearMonth() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
+}
+
 export default function AddDonationForm({
-  campaigns,
   onLookupDonor,
   onSubmit,
   onCancel,
@@ -41,9 +45,8 @@ export default function AddDonationForm({
   const [newLocation, setNewLocation] = useState('');
 
   // Donation fields
-  const [campaignId, setCampaignId] = useState('');
+  const [month, setMonth] = useState(currentYearMonth);
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [formError, setFormError] = useState('');
 
@@ -80,18 +83,17 @@ export default function AddDonationForm({
     const donorLocation = foundDonor ? (foundDonor.location ?? '') : newLocation.trim();
 
     if (isNewDonor && !newName.trim()) return setFormError('Donor name is required.');
-    if (!campaignId) return setFormError('Please select a campaign.');
+    if (!month) return setFormError('Please select a contribution month.');
     const amt = parseFloat(amount);
     if (!amount || isNaN(amt) || amt <= 0) return setFormError('Amount must be greater than 0.');
-    if (!date) return setFormError('Donation date is required.');
 
     await onSubmit({
       donor_name: donorName,
       donor_phone: digits,
       donor_location: donorLocation,
-      campaign_id: campaignId,
+      campaign_id: '',               // no campaign — handled as null in dashboard
       amount,
-      donation_date: date,
+      donation_date: `${month}-01`,  // first day of the selected month
       notes,
     });
   };
@@ -158,7 +160,6 @@ export default function AddDonationForm({
       {step === 'fill' && (
         <>
           {foundDonor ? (
-            /* Existing donor found */
             <div className="rounded-xl p-4 flex items-start gap-3"
               style={{ background: 'rgba(5,150,105,0.08)', border: '1.5px solid rgba(5,150,105,0.3)' }}>
               <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5"
@@ -184,7 +185,6 @@ export default function AddDonationForm({
               </div>
             </div>
           ) : (
-            /* New donor — collect name + location */
             <div className="rounded-xl p-4"
               style={{ background: 'rgba(234,179,8,0.08)', border: '1.5px solid rgba(234,179,8,0.3)' }}>
               <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#b45309' }}>
@@ -246,19 +246,20 @@ export default function AddDonationForm({
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Contribution Month */}
                 <div>
                   <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
-                    Campaign <span className="text-red-400">*</span>
+                    Contribution Month <span className="text-red-400">*</span>
                   </label>
-                  <select
-                    value={campaignId}
-                    onChange={e => setCampaignId(e.target.value)}
-                    className="input appearance-none cursor-pointer"
-                  >
-                    <option value="">Select a campaign…</option>
-                    {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <input
+                    type="month"
+                    value={month}
+                    onChange={e => setMonth(e.target.value)}
+                    className="input"
+                  />
                 </div>
+
+                {/* Amount */}
                 <div>
                   <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
                     Amount ($) <span className="text-red-400">*</span>
@@ -275,13 +276,6 @@ export default function AddDonationForm({
                     />
                   </div>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
-                  Donation Date <span className="text-red-400">*</span>
-                </label>
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="input" />
               </div>
 
               <div>
