@@ -40,6 +40,7 @@ export default function YearlyReportTable({
   const [pendingMonth, setPendingMonth] = useState<number | null>(null); // 0-indexed
   const [uploadingMonth, setUploadingMonth] = useState<number | null>(null);
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
+  const [imgError, setImgError] = useState(false);
 
   const yearDonations = useMemo(
     () => donations.filter(d => Number(d.donation_date.split('-')[0]) === year),
@@ -145,19 +146,49 @@ export default function YearlyReportTable({
       {viewingUrl && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.82)' }}
-          onClick={() => setViewingUrl(null)}>
-          <div className="relative max-w-2xl w-full animate-fade-in" onClick={e => e.stopPropagation()}>
+          style={{ background: 'rgba(0,0,0,0.85)' }}
+          onClick={() => { setViewingUrl(null); setImgError(false); }}>
+          <div className="relative w-full max-w-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
+            {/* Close */}
             <button
-              onClick={() => setViewingUrl(null)}
-              className="absolute -top-9 right-0 flex items-center gap-1.5 text-white text-sm font-semibold opacity-80 hover:opacity-100">
+              onClick={() => { setViewingUrl(null); setImgError(false); }}
+              className="absolute -top-10 right-0 flex items-center gap-1.5 text-white text-sm font-semibold opacity-80 hover:opacity-100 transition-opacity">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
               Close
             </button>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={viewingUrl} alt="Receipt" className="w-full rounded-2xl shadow-2xl" />
+
+            {imgError ? (
+              /* Error state */
+              <div className="flex flex-col items-center justify-center py-16 rounded-2xl gap-3"
+                style={{ background: '#1a1a1a', border: '1px solid #333' }}>
+                <svg className="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p className="text-white font-semibold">Could not load receipt</p>
+                <p className="text-gray-400 text-sm text-center max-w-xs">
+                  Make sure the <strong>receipts</strong> bucket is set to <strong>Public</strong> in Supabase Storage.
+                </p>
+                <a
+                  href={viewingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 text-sm font-semibold px-4 py-2 rounded-lg"
+                  style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}>
+                  Try opening directly ↗
+                </a>
+              </div>
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={viewingUrl}
+                alt="Receipt"
+                className="w-full rounded-2xl shadow-2xl"
+                onError={() => setImgError(true)}
+              />
+            )}
           </div>
         </div>
       )}
