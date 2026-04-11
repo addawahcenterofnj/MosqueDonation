@@ -45,35 +45,42 @@
 
 /* ── Design tokens (dark) ───────────────────────────── */
 .dark {
-  --c-bg:          #0f172a;
-  --c-card:        #1e293b;
-  --c-card-alt:    #162032;
+  /* Clean neutral dark surfaces — clear elevation layers */
+  --c-bg:          #141414;
+  --c-card:        #1f1f1f;
+  --c-card-alt:    #1a1a1a;
 
-  --c-border:      #1e4a3a;
-  --c-border-2:    #2d6a50;
+  /* Neutral visible borders */
+  --c-border:      #2c2c2c;
+  --c-border-2:    #3a3a3a;
 
-  --c-accent:      #34d399;
-  --c-accent-h:    #10b981;
-  --c-accent-bg:   #0f2d1e;
+  /* Vivid emerald accent — pops on dark surfaces */
+  --c-accent:      #00c47a;
+  --c-accent-h:    #00a866;
+  --c-accent-bg:   rgba(0,196,122,0.1);
   --c-accent-dark: #6ee7b7;
-  --c-accent-muted:#1e5c40;
+  --c-accent-muted:rgba(0,196,122,0.2);
 
-  --c-text:        #e2e8f0;
-  --c-text-2:      #94a3b8;
-  --c-text-3:      #64748b;
-  --c-text-accent: #34d399;
+  /* Clear text hierarchy */
+  --c-text:        #f0f0f0;
+  --c-text-2:      #999999;
+  --c-text-3:      #606060;
+  --c-text-accent: #00c47a;
 
-  --c-input-bg:    #1e293b;
-  --c-input-border:#1e4a3a;
-  --c-input-focus: #34d399;
+  /* Inputs — subtle but readable */
+  --c-input-bg:    #1f1f1f;
+  --c-input-border:#2c2c2c;
+  --c-input-focus: #00c47a;
 
-  --c-th-bg:       linear-gradient(135deg, #162032, #0f2d1e);
-  --c-th-text:     #6ee7b7;
-  --c-td-div:      #1e3730;
-  --c-td-hover:    rgba(52,211,153,0.05);
+  /* Tables */
+  --c-th-bg:       #252525;
+  --c-th-text:     #00c47a;
+  --c-td-div:      #252525;
+  --c-td-hover:    rgba(0,196,122,0.05);
 
-  --c-shadow:      rgba(0,0,0,0.3);
-  --c-shadow-lg:   rgba(0,0,0,0.5);
+  /* Shadows */
+  --c-shadow:      rgba(0,0,0,0.45);
+  --c-shadow-lg:   rgba(0,0,0,0.65);
 }
 
 /* ── Base ─────────────────────────────────────────── */
@@ -123,7 +130,8 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #6ee7b7; border-radius: 9999px; }
 ::-webkit-scrollbar-thumb:hover { background: #10b981; }
-.dark ::-webkit-scrollbar-thumb { background: #1e4a3a; }
+.dark ::-webkit-scrollbar-thumb { background: #3a3a3a; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #00c47a; }
 
 /* ── Component classes ────────────────────────────── */
 @layer components {
@@ -154,7 +162,7 @@ body {
   }
   .input:focus {
     border-color: var(--c-input-focus);
-    box-shadow: 0 0 0 3px rgba(16,185,129,0.15);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-input-focus) 20%, transparent);
   }
   .input::placeholder { color: var(--c-text-3); }
 

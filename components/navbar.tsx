@@ -15,7 +15,7 @@ function ThemeToggle() {
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
-    return <div className="w-9 h-9 rounded-lg" style={{ background: 'rgba(255,255,255,0.12)' }} />;
+    return <div className="w-20 h-8 rounded-full" style={{ background: 'rgba(255,255,255,0.12)' }} />;
   }
 
   const isDark = resolvedTheme === 'dark';
@@ -23,23 +23,29 @@ function ThemeToggle() {
     <button
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       aria-label="Toggle theme"
-      className="w-9 h-9 rounded-lg flex items-center justify-center transition-all shrink-0"
-      style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}
-      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.22)')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all shrink-0 text-xs font-semibold"
+      style={{
+        background: isDark ? 'rgba(0,196,122,0.18)' : 'rgba(255,255,255,0.15)',
+        border: isDark ? '1px solid rgba(0,196,122,0.35)' : '1px solid rgba(255,255,255,0.3)',
+        color: isDark ? '#6ee7b7' : '#e6fffa',
+      }}
     >
       {isDark ? (
-        /* Sun icon */
-        <svg className="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
-        </svg>
+        <>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+          </svg>
+          <span className="hidden sm:inline">Light</span>
+        </>
       ) : (
-        /* Moon icon */
-        <svg className="w-4 h-4 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        </svg>
+        <>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+          <span className="hidden sm:inline">Dark</span>
+        </>
       )}
     </button>
   );

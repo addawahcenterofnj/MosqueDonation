@@ -39,10 +39,10 @@ const SECTION_STYLE_LIGHT: SectionStyle = {
 };
 
 const SECTION_STYLE_DARK: SectionStyle = {
-  campaigns: { accent: '#818cf8', light: '#1e1b4b', border: '#3730a3' },
-  donations:  { accent: '#34d399', light: '#0f2d1e', border: '#1e5c40' },
-  reports:    { accent: '#fbbf24', light: '#292004', border: '#854d0e' },
-  monthly:    { accent: '#34d399', light: '#0f2d1e', border: '#1e5c40' },
+  campaigns: { accent: '#818cf8', light: 'rgba(99,102,241,0.1)',  border: 'rgba(99,102,241,0.3)' },
+  donations:  { accent: '#00c47a', light: 'rgba(0,196,122,0.08)', border: 'rgba(0,196,122,0.28)' },
+  reports:    { accent: '#fbbf24', light: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.28)' },
+  monthly:    { accent: '#00c47a', light: 'rgba(0,196,122,0.08)', border: 'rgba(0,196,122,0.28)' },
 };
 
 export default function AdminDashboard() {

@@ -37,7 +37,7 @@ const cards = [
       </svg>
     ),
     from: '#059669', to: '#047857',
-    iconBg: 'var(--c-accent-bg)', iconColor: 'var(--c-accent)',
+    iconBg: 'rgba(5,150,105,0.12)', iconColor: 'var(--c-accent)',
     stagger: 'stagger-1',
   },
   {
@@ -48,8 +48,8 @@ const cards = [
           d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
       </svg>
     ),
-    from: '#2563eb', to: '#1d4ed8',
-    iconBg: '#eff6ff', iconColor: '#2563eb',
+    from: '#3b82f6', to: '#2563eb',
+    iconBg: 'rgba(59,130,246,0.12)', iconColor: '#3b82f6',
     stagger: 'stagger-2',
   },
   {
@@ -60,8 +60,8 @@ const cards = [
           d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
       </svg>
     ),
-    from: '#7c3aed', to: '#6d28d9',
-    iconBg: '#f5f3ff', iconColor: '#7c3aed',
+    from: '#a855f7', to: '#7c3aed',
+    iconBg: 'rgba(168,85,247,0.12)', iconColor: '#a855f7',
     stagger: 'stagger-3',
   },
 ];

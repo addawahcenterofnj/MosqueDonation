@@ -43,8 +43,7 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col"
-      style={{ background: 'linear-gradient(160deg, #ecfdf5 0%, #f0fdf4 40%, #d1fae5 100%)' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--c-bg)' }}>
 
       {/* Navbar */}
       <nav style={{ background: 'linear-gradient(135deg, #064e3b, #047857)', boxShadow: '0 4px 24px rgba(4,78,63,0.3)' }}>
@@ -67,8 +66,8 @@ export default function LoginForm() {
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md animate-scale-in">
           {/* Card */}
-          <div className="bg-white rounded-3xl overflow-hidden"
-            style={{ boxShadow: '0 20px 60px rgba(5,150,105,0.12)', border: '1.5px solid #d1fae5' }}>
+          <div className="rounded-3xl overflow-hidden"
+            style={{ background: 'var(--c-card)', boxShadow: '0 20px 60px var(--c-shadow-lg)', border: '1.5px solid var(--c-border)' }}>
 
             {/* Top gradient strip */}
             <div className="h-2" style={{ background: 'linear-gradient(90deg, #059669, #10b981, #34d399)' }} />
@@ -77,16 +76,17 @@ export default function LoginForm() {
               {/* Header */}
               <div className="text-center mb-8">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4"
-                  style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', border: '1.5px solid #a7f3d0' }}>
+                  style={{ background: 'var(--c-accent-bg)', border: '1.5px solid var(--c-border-2)' }}>
                   🔐
                 </div>
-                <h1 className="text-2xl font-extrabold text-gray-900">Admin Login</h1>
-                <p className="text-sm text-gray-500 mt-1.5">Sign in to manage donations &amp; campaigns</p>
+                <h1 className="text-2xl font-extrabold" style={{ color: 'var(--c-text)' }}>Admin Login</h1>
+                <p className="text-sm mt-1.5" style={{ color: 'var(--c-text-2)' }}>Sign in to manage donations &amp; campaigns</p>
               </div>
 
               {/* Error */}
               {error && (
-                <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6 animate-slide-down">
+                <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm mb-6 animate-slide-down"
+                  style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}>
                   <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -98,9 +98,10 @@ export default function LoginForm() {
               {/* Form */}
               <form onSubmit={handleLogin} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email address</label>
+                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>Email address</label>
                   <div className="relative">
-                    <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                    <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                      style={{ color: 'var(--c-text-3)' }}
                       fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                         d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -111,9 +112,10 @@ export default function LoginForm() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+                  <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>Password</label>
                   <div className="relative">
-                    <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                    <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                      style={{ color: 'var(--c-text-3)' }}
                       fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                         d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -122,7 +124,8 @@ export default function LoginForm() {
                       onChange={e => setPassword(e.target.value)}
                       className="input pl-10 pr-10" placeholder="••••••••" autoComplete="current-password" />
                     <button type="button" onClick={() => setShowPw(p => !p)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                      className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                      style={{ color: 'var(--c-text-3)' }}>
                       {showPw ? (
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -156,7 +159,7 @@ export default function LoginForm() {
             </div>
           </div>
 
-          <p className="text-center text-xs text-gray-400 mt-6">
+          <p className="text-center text-xs mt-6" style={{ color: 'var(--c-text-3)' }}>
             Admin accounts are created manually by the system administrator.
           </p>
         </div>

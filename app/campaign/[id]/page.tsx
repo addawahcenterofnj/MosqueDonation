@@ -63,26 +63,19 @@ export default async function CampaignPage({ params }: PageProps) {
         {/* Stats row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 -mt-8 relative z-10">
           {[
-            {
-              label: 'Total Collected', value: formatCurrency(totalAmount),
-              border: '#a7f3d0', color: '#059669', icon: '💰',
-            },
-            {
-              label: 'Total Donations', value: String(donationList.length),
-              border: '#bfdbfe', color: '#2563eb', icon: '📋',
-            },
+            { label: 'Total Collected', value: formatCurrency(totalAmount), color: '#059669', icon: '💰' },
+            { label: 'Total Donations', value: String(donationList.length), color: '#3b82f6', icon: '📋' },
             {
               label: 'Date Range',
               value: campaign.start_date || campaign.end_date
                 ? `${campaign.start_date ? formatDate(campaign.start_date) : 'N/A'} – ${campaign.end_date ? formatDate(campaign.end_date) : 'Ongoing'}`
                 : 'Not specified',
-              border: '#ddd6fe', color: '#7c3aed', icon: '📅',
-              small: true,
+              color: '#a855f7', icon: '📅', small: true,
             },
           ].map((s) => (
             <div key={s.label}
               className="rounded-2xl p-5 animate-slide-up"
-              style={{ background: 'var(--c-card)', border: `1.5px solid ${s.border}`, boxShadow: '0 4px 20px var(--c-shadow)' }}>
+              style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 4px 20px var(--c-shadow)' }}>
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xl">{s.icon}</span>
                 <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--c-text-2)' }}>{s.label}</p>
