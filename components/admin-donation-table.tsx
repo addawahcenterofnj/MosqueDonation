@@ -13,7 +13,7 @@ export default function AdminDonationTable({ donations, onEdit, onDelete }: Admi
   if (donations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-gray-400"
-        style={{ background: '#f9fafb', borderRadius: '1rem', border: '1.5px dashed #e5e7eb' }}>
+        style={{ background: '#f0fdf4', borderRadius: '1rem', border: '1.5px dashed #a7f3d0' }}>
         <span className="text-4xl mb-2">💳</span>
         <p className="font-medium text-gray-500">No donations yet</p>
         <p className="text-sm mt-1">Add your first donation above</p>
@@ -27,7 +27,7 @@ export default function AdminDonationTable({ donations, onEdit, onDelete }: Admi
       <div className="flex flex-col gap-3 sm:hidden">
         {donations.map((d) => (
           <div key={d.id} className="bg-white rounded-xl p-4"
-            style={{ border: '1.5px solid #e5e7eb', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
+            style={{ border: '1.5px solid #d1fae5', boxShadow: '0 1px 6px rgba(5,150,105,0.08)' }}>
             <div className="flex items-start justify-between mb-2">
               <div>
                 <p className="font-bold text-gray-900 text-sm">{d.donor_name}</p>
@@ -59,20 +59,20 @@ export default function AdminDonationTable({ donations, onEdit, onDelete }: Admi
 
       {/* Desktop table */}
       <div className="hidden sm:block overflow-x-auto rounded-2xl"
-        style={{ border: '1.5px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+        style={{ border: '1.5px solid #d1fae5', boxShadow: '0 2px 12px rgba(5,150,105,0.07)' }}>
         <table className="min-w-full text-sm">
           <thead>
-            <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
+            <tr style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)' }}>
               {['Donor', 'Campaign', 'Amount', 'Date', 'Phone', 'Location', 'Actions'].map(h => (
-                <th key={h} className={`px-4 py-3.5 font-semibold text-gray-600 whitespace-nowrap ${h === 'Amount' || h === 'Actions' ? 'text-center' : 'text-left'}`}>
+                <th key={h} className={`px-4 py-3.5 font-semibold text-emerald-800 whitespace-nowrap ${h === 'Amount' || h === 'Actions' ? 'text-center' : 'text-left'}`}>
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-50">
+          <tbody className="bg-white divide-y divide-emerald-50">
             {donations.map((d) => (
-              <tr key={d.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={d.id} className="hover:bg-emerald-50/40 transition-colors">
                 <td className="px-4 py-3.5 font-semibold text-gray-900 whitespace-nowrap">{d.donor_name}</td>
                 <td className="px-4 py-3.5 whitespace-nowrap">
                   {d.campaigns?.name

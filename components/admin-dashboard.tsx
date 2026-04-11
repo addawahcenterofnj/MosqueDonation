@@ -269,38 +269,45 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#f1f5f9' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#f0fdf4' }}>
       <Navbar isAdmin onLogout={handleLogout} />
 
       {/* ── Admin Hero Bar ── */}
-      <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)', borderBottom: '1px solid #1e3a5f' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="relative overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #064e3b 0%, #065f46 60%, #047857 100%)' }}>
+        {/* Decorative circles */}
+        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-10 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #6ee7b7, transparent)' }} />
+        <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full opacity-10 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #34d399, transparent)' }} />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-down">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full"
-                    style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}>
+                    style={{ background: 'rgba(255,255,255,0.15)', color: '#a7f3d0', border: '1px solid rgba(167,243,208,0.4)' }}>
                     Admin Panel
                   </span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">Dashboard</h1>
-                <p className="text-slate-400 text-sm mt-1">Manage your mosque donation data</p>
+                <p className="text-emerald-200 text-sm mt-1">Manage your mosque donation data</p>
               </div>
             </div>
 
             {!loading && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 animate-fade-in w-full sm:w-auto">
                 {[
-                  { label: 'Total Raised',   value: formatCurrency(totalAmount),      color: '#34d399', bg: 'rgba(52,211,153,0.1)',  border: 'rgba(52,211,153,0.25)' },
-                  { label: 'Campaigns',      value: String(campaigns.length),          color: '#818cf8', bg: 'rgba(129,140,248,0.1)', border: 'rgba(129,140,248,0.25)' },
-                  { label: 'Donations',      value: String(donations.length),          color: '#38bdf8', bg: 'rgba(56,189,248,0.1)',  border: 'rgba(56,189,248,0.25)' },
-                  { label: 'Monthly',        value: String(monthlyReports.length),     color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',  border: 'rgba(251,191,36,0.25)' },
+                  { label: 'Total Raised', value: formatCurrency(totalAmount),  color: '#6ee7b7', bg: 'rgba(255,255,255,0.1)',  border: 'rgba(255,255,255,0.2)' },
+                  { label: 'Campaigns',    value: String(campaigns.length),      color: '#a7f3d0', bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.18)' },
+                  { label: 'Donations',    value: String(donations.length),      color: '#6ee7b7', bg: 'rgba(255,255,255,0.1)',  border: 'rgba(255,255,255,0.2)' },
+                  { label: 'Monthly',      value: String(monthlyReports.length), color: '#a7f3d0', bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.18)' },
                 ].map(stat => (
                   <div key={stat.label} className="text-center px-3 sm:px-4 py-2.5 rounded-xl"
-                    style={{ background: stat.bg, border: `1px solid ${stat.border}` }}>
+                    style={{ background: stat.bg, border: `1px solid ${stat.border}`, backdropFilter: 'blur(8px)' }}>
                     <p className="text-base sm:text-xl font-extrabold leading-tight" style={{ color: stat.color }}>{stat.value}</p>
-                    <p className="text-[10px] sm:text-xs text-slate-400 font-medium mt-0.5 whitespace-nowrap">{stat.label}</p>
+                    <p className="text-[10px] sm:text-xs text-emerald-200 font-medium mt-0.5 whitespace-nowrap">{stat.label}</p>
                   </div>
                 ))}
               </div>
@@ -313,7 +320,7 @@ export default function AdminDashboard() {
 
         {/* ── Section Tabs ── */}
         <div className="flex gap-1 p-1.5 rounded-2xl mb-6 w-full"
-          style={{ background: '#1e293b', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}>
+          style={{ background: '#d1fae5', border: '1.5px solid #a7f3d0', boxShadow: '0 2px 12px rgba(5,150,105,0.1)' }}>
           {navItems.map(({ key, label, icon }) => {
             const s = SECTION_STYLE[key];
             const isActive = activeSection === key;
@@ -321,8 +328,8 @@ export default function AdminDashboard() {
               <button key={key} onClick={() => setActiveSection(key)}
                 className="flex flex-col xs:flex-row items-center gap-0.5 sm:gap-2 px-1 sm:px-4 py-2 sm:py-2.5 rounded-xl text-[10px] sm:text-sm font-bold transition-all flex-1 justify-center"
                 style={isActive
-                  ? { background: '#fff', color: s.accent, boxShadow: `0 2px 12px rgba(0,0,0,0.2), 0 0 0 1.5px ${s.accent}40` }
-                  : { color: '#94a3b8', background: 'transparent' }
+                  ? { background: '#fff', color: s.accent, boxShadow: `0 2px 12px rgba(0,0,0,0.1), 0 0 0 1.5px ${s.accent}40` }
+                  : { color: '#047857', background: 'transparent' }
                 }>
                 <span className="text-base sm:text-lg leading-none">{icon}</span>
                 <span className="leading-tight">{label}</span>
@@ -330,7 +337,7 @@ export default function AdminDashboard() {
                   <span className="text-[9px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full font-extrabold hidden sm:inline"
                     style={isActive
                       ? { background: s.light, color: s.accent, border: `1px solid ${s.border}` }
-                      : { background: 'rgba(255,255,255,0.08)', color: '#64748b' }
+                      : { background: '#a7f3d0', color: '#065f46' }
                     }>
                     {key === 'campaigns' ? campaigns.length
                       : key === 'donations' ? donations.length
@@ -456,7 +463,7 @@ export default function AdminDashboard() {
                 >
                   {campaigns.length === 0 ? (
                     <div className="flex flex-col items-center py-16"
-                      style={{ background: '#f9fafb', borderRadius: '1rem', border: '1.5px dashed #e5e7eb' }}>
+                      style={{ background: '#f0fdf4', borderRadius: '1rem', border: '1.5px dashed #a7f3d0' }}>
                       <span className="text-5xl mb-3">📄</span>
                       <p className="font-semibold text-gray-500">No campaigns yet</p>
                       <button onClick={() => setActiveSection('campaigns')} className="mt-4 btn-primary text-sm py-2">
@@ -570,9 +577,9 @@ interface SectionCardProps {
 function SectionCard({ icon, title, subtitle, style, showForm, extraAction, primaryAction, children }: SectionCardProps) {
   return (
     <div className="bg-white rounded-2xl overflow-hidden"
-      style={{ border: `1.5px solid ${showForm ? style.border : '#e2e8f0'}`, boxShadow: '0 2px 16px rgba(0,0,0,0.05)' }}>
+      style={{ border: `1.5px solid ${showForm ? style.border : '#d1fae5'}`, boxShadow: '0 2px 16px rgba(5,150,105,0.07)' }}>
       <div className="px-5 sm:px-6 py-4 flex items-center justify-between"
-        style={{ borderBottom: `1.5px solid ${showForm ? style.border : '#f1f5f9'}`, background: showForm ? style.light : '#fafbfc' }}>
+        style={{ borderBottom: `1.5px solid ${showForm ? style.border : '#ecfdf5'}`, background: showForm ? style.light : '#f0fdf4' }}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
             style={{ background: style.light, border: `1.5px solid ${style.border}` }}>{icon}</div>
