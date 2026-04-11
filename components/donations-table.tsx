@@ -1,7 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Donation } from '@/types/donation';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import Pagination from '@/components/pagination';
+
+const PAGE_SIZE = 5;
 
 interface DonationsTableProps {
   donations: Donation[];
@@ -9,6 +13,9 @@ interface DonationsTableProps {
 }
 
 export default function DonationsTable({ donations, showCampaign = true }: DonationsTableProps) {
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [donations]);
+
   if (donations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 animate-fade-in"
@@ -23,11 +30,14 @@ export default function DonationsTable({ donations, showCampaign = true }: Donat
     );
   }
 
+  const totalPages = Math.ceil(donations.length / PAGE_SIZE);
+  const paged = donations.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
-    <>
+    <div>
       {/* Mobile: card view */}
       <div className="flex flex-col gap-3 sm:hidden animate-slide-up">
-        {donations.map((d, i) => (
+        {paged.map((d, i) => (
           <div key={d.id} className="rounded-xl p-4"
             style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 1px 8px var(--c-shadow)', animationDelay: `${i * 0.04}s` }}>
             <div className="flex items-start justify-between mb-2">
@@ -82,8 +92,8 @@ export default function DonationsTable({ donations, showCampaign = true }: Donat
             </tr>
           </thead>
           <tbody style={{ background: 'var(--c-card)' }}>
-            {donations.map((d, i) => (
-              <tr key={d.id} className="transition-colors" style={{ borderTop: '1px solid var(--c-td-div)', animationDelay: `${i * 0.04}s` }}
+            {paged.map((d) => (
+              <tr key={d.id} className="transition-colors" style={{ borderTop: '1px solid var(--c-td-div)' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--c-td-hover)')}
                 onMouseLeave={e => (e.currentTarget.style.background = '')}>
                 <td className="px-5 py-3.5 font-medium whitespace-nowrap" style={{ color: 'var(--c-text)' }}>{d.donor_name}</td>
@@ -118,6 +128,8 @@ export default function DonationsTable({ donations, showCampaign = true }: Donat
           </tbody>
         </table>
       </div>
-    </>
+
+      <Pagination page={page} totalPages={totalPages} totalItems={donations.length} pageSize={PAGE_SIZE} onPage={setPage} />
+    </div>
   );
 }

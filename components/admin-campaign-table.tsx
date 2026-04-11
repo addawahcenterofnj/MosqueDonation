@@ -1,7 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Campaign } from '@/types/campaign';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import Pagination from '@/components/pagination';
+
+const PAGE_SIZE = 10;
 
 interface AdminCampaignTableProps {
   campaigns: Campaign[];
@@ -10,6 +14,9 @@ interface AdminCampaignTableProps {
 }
 
 export default function AdminCampaignTable({ campaigns, onEdit, onDelete }: AdminCampaignTableProps) {
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [campaigns]);
+
   if (campaigns.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12"
@@ -21,11 +28,14 @@ export default function AdminCampaignTable({ campaigns, onEdit, onDelete }: Admi
     );
   }
 
+  const totalPages = Math.ceil(campaigns.length / PAGE_SIZE);
+  const paged = campaigns.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
-    <>
+    <div>
       {/* Mobile cards */}
       <div className="flex flex-col gap-3 sm:hidden">
-        {campaigns.map((c) => (
+        {paged.map((c) => (
           <div key={c.id} className="rounded-xl p-4"
             style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 1px 6px var(--c-shadow)' }}>
             <div className="flex items-start justify-between gap-2 mb-2">
@@ -69,7 +79,7 @@ export default function AdminCampaignTable({ campaigns, onEdit, onDelete }: Admi
             </tr>
           </thead>
           <tbody style={{ background: 'var(--c-card)' }}>
-            {campaigns.map((c) => (
+            {paged.map((c) => (
               <tr key={c.id} className="transition-colors" style={{ borderTop: '1px solid var(--c-td-div)' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--c-td-hover)')}
                 onMouseLeave={e => (e.currentTarget.style.background = '')}>
@@ -110,6 +120,8 @@ export default function AdminCampaignTable({ campaigns, onEdit, onDelete }: Admi
           </tbody>
         </table>
       </div>
-    </>
+
+      <Pagination page={page} totalPages={totalPages} totalItems={campaigns.length} pageSize={PAGE_SIZE} onPage={setPage} />
+    </div>
   );
 }

@@ -15,8 +15,12 @@ import AdminCampaignTable from '@/components/admin-campaign-table';
 import AdminDonationTable from '@/components/admin-donation-table';
 import MonthlyReportTable from '@/components/monthly-report-table';
 import ConfirmModal from '@/components/confirm-modal';
+import Pagination from '@/components/pagination';
 import { generateCampaignPDF, generateMonthlyReportPDF } from '@/lib/pdf';
 import { formatCurrency } from '@/lib/utils';
+
+const REPORT_MONTHLY_PAGE_SIZE = 10;
+const REPORT_CAMPAIGN_PAGE_SIZE = 5;
 
 type Section = 'campaigns' | 'donations' | 'reports' | 'monthly';
 type ToastType = 'success' | 'error';
@@ -69,6 +73,8 @@ export default function AdminDashboard() {
   const [editingMonthly, setEditingMonthly] = useState<MonthlyReport | null>(null);
 
   const [modal, setModal] = useState<ModalState>({ open: false, title: '', message: '', onConfirm: () => {} });
+  const [reportMonthlyPage, setReportMonthlyPage] = useState(1);
+  const [reportCampaignPage, setReportCampaignPage] = useState(1);
   const openModal = (opts: Omit<ModalState, 'open'>) => setModal({ open: true, ...opts });
   const closeModal = () => setModal(m => ({ ...m, open: false }));
 
@@ -507,32 +513,39 @@ export default function AdminDashboard() {
                         Go to Monthly tab
                       </button>
                     </div>
-                  ) : (
-                    <div className="overflow-x-auto rounded-xl" style={{ border: '1.5px solid var(--c-border)' }}>
-                      <table className="min-w-full text-sm">
-                        <thead>
-                          <tr style={{ background: 'var(--c-th-bg)' }}>
-                            <th className="px-4 py-3 text-left font-semibold" style={{ color: 'var(--c-th-text)' }}>Month</th>
-                            <th className="px-4 py-3 text-right font-semibold" style={{ color: 'var(--c-th-text)' }}>Amount</th>
-                            <th className="px-4 py-3 text-left font-semibold hidden sm:table-cell" style={{ color: 'var(--c-th-text)' }}>Notes</th>
-                          </tr>
-                        </thead>
-                        <tbody style={{ background: 'var(--c-card)' }}>
-                          {monthlyReports.map(r => (
-                            <tr key={r.id} className="transition-colors" style={{ borderTop: '1px solid var(--c-td-div)' }}
-                              onMouseEnter={e => (e.currentTarget.style.background = 'var(--c-td-hover)')}
-                              onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                              <td className="px-4 py-3 font-semibold whitespace-nowrap" style={{ color: 'var(--c-text)' }}>{r.month}</td>
-                              <td className="px-4 py-3 text-right font-bold whitespace-nowrap" style={{ color: 'var(--c-accent)' }}>
-                                {formatCurrency(Number(r.amount))}
-                              </td>
-                              <td className="px-4 py-3 hidden sm:table-cell" style={{ color: 'var(--c-text-2)' }}>{r.notes || '—'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                  ) : (() => {
+                    const totalPages = Math.ceil(monthlyReports.length / REPORT_MONTHLY_PAGE_SIZE);
+                    const paged = monthlyReports.slice((reportMonthlyPage - 1) * REPORT_MONTHLY_PAGE_SIZE, reportMonthlyPage * REPORT_MONTHLY_PAGE_SIZE);
+                    return (
+                      <div>
+                        <div className="overflow-x-auto rounded-xl" style={{ border: '1.5px solid var(--c-border)' }}>
+                          <table className="min-w-full text-sm">
+                            <thead>
+                              <tr style={{ background: 'var(--c-th-bg)' }}>
+                                <th className="px-4 py-3 text-left font-semibold" style={{ color: 'var(--c-th-text)' }}>Month</th>
+                                <th className="px-4 py-3 text-right font-semibold" style={{ color: 'var(--c-th-text)' }}>Amount</th>
+                                <th className="px-4 py-3 text-left font-semibold hidden sm:table-cell" style={{ color: 'var(--c-th-text)' }}>Notes</th>
+                              </tr>
+                            </thead>
+                            <tbody style={{ background: 'var(--c-card)' }}>
+                              {paged.map(r => (
+                                <tr key={r.id} className="transition-colors" style={{ borderTop: '1px solid var(--c-td-div)' }}
+                                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--c-td-hover)')}
+                                  onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                                  <td className="px-4 py-3 font-semibold whitespace-nowrap" style={{ color: 'var(--c-text)' }}>{r.month}</td>
+                                  <td className="px-4 py-3 text-right font-bold whitespace-nowrap" style={{ color: 'var(--c-accent)' }}>
+                                    {formatCurrency(Number(r.amount))}
+                                  </td>
+                                  <td className="px-4 py-3 hidden sm:table-cell" style={{ color: 'var(--c-text-2)' }}>{r.notes || '—'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <Pagination page={reportMonthlyPage} totalPages={totalPages} totalItems={monthlyReports.length} pageSize={REPORT_MONTHLY_PAGE_SIZE} onPage={setReportMonthlyPage} />
+                      </div>
+                    );
+                  })()}
                 </SectionCard>
 
                 <SectionCard
@@ -550,53 +563,60 @@ export default function AdminDashboard() {
                         Go to Campaigns
                       </button>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {campaigns.map((c) => {
-                        const count = donations.filter(d => d.campaign_id === c.id).length;
-                        return (
-                          <div key={c.id} className="rounded-2xl overflow-hidden transition-all"
-                            style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 1px 8px var(--c-shadow)' }}>
-                            <div className="p-4 space-y-3">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
-                                  style={{ background: style.light, border: `1px solid ${style.border}` }}>🎯</div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="font-bold truncate" style={{ color: 'var(--c-text)' }}>{c.name}</p>
-                                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                    <span className="text-xs font-semibold" style={{ color: 'var(--c-accent)' }}>{formatCurrency(c.total_amount ?? 0)}</span>
-                                    <span style={{ color: 'var(--c-border-2)' }}>·</span>
-                                    <span className="text-xs" style={{ color: 'var(--c-text-2)' }}>{count} donation{count !== 1 ? 's' : ''}</span>
-                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                                      style={c.is_active
-                                        ? { background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }
-                                        : { background: 'var(--c-card-alt)', color: 'var(--c-text-2)', border: '1px solid var(--c-border)' }}>
-                                      {c.is_active ? '● Active' : '○ Ended'}
-                                    </span>
+                  ) : (() => {
+                    const totalPages = Math.ceil(campaigns.length / REPORT_CAMPAIGN_PAGE_SIZE);
+                    const paged = campaigns.slice((reportCampaignPage - 1) * REPORT_CAMPAIGN_PAGE_SIZE, reportCampaignPage * REPORT_CAMPAIGN_PAGE_SIZE);
+                    return (
+                      <div>
+                        <div className="space-y-3">
+                          {paged.map((c) => {
+                            const count = donations.filter(d => d.campaign_id === c.id).length;
+                            return (
+                              <div key={c.id} className="rounded-2xl overflow-hidden transition-all"
+                                style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 1px 8px var(--c-shadow)' }}>
+                                <div className="p-4 space-y-3">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
+                                      style={{ background: style.light, border: `1px solid ${style.border}` }}>🎯</div>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-bold truncate" style={{ color: 'var(--c-text)' }}>{c.name}</p>
+                                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                        <span className="text-xs font-semibold" style={{ color: 'var(--c-accent)' }}>{formatCurrency(c.total_amount ?? 0)}</span>
+                                        <span style={{ color: 'var(--c-border-2)' }}>·</span>
+                                        <span className="text-xs" style={{ color: 'var(--c-text-2)' }}>{count} donation{count !== 1 ? 's' : ''}</span>
+                                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                                          style={c.is_active
+                                            ? { background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }
+                                            : { background: 'var(--c-card-alt)', color: 'var(--c-text-2)', border: '1px solid var(--c-border)' }}>
+                                          {c.is_active ? '● Active' : '○ Ended'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <button onClick={() => handleDeleteCampaignDonations(c)}
+                                      className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold px-2 sm:px-3 py-2 rounded-lg min-w-0"
+                                      style={{ background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }}>
+                                      <TrashIcon />
+                                      <span className="truncate"><span className="hidden xs:inline">Clear </span>Donations</span>
+                                    </button>
+                                    <button onClick={() => handleDownloadPDF(c)} className="btn-primary flex-1 text-xs py-2 px-2 sm:px-3 min-w-0">
+                                      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                      </svg>
+                                      <span className="truncate">Download PDF</span>
+                                    </button>
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <button onClick={() => handleDeleteCampaignDonations(c)}
-                                  className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold px-2 sm:px-3 py-2 rounded-lg min-w-0"
-                                  style={{ background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }}>
-                                  <TrashIcon />
-                                  <span className="truncate"><span className="hidden xs:inline">Clear </span>Donations</span>
-                                </button>
-                                <button onClick={() => handleDownloadPDF(c)} className="btn-primary flex-1 text-xs py-2 px-2 sm:px-3 min-w-0">
-                                  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                  </svg>
-                                  <span className="truncate">Download PDF</span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                            );
+                          })}
+                        </div>
+                        <Pagination page={reportCampaignPage} totalPages={totalPages} totalItems={campaigns.length} pageSize={REPORT_CAMPAIGN_PAGE_SIZE} onPage={setReportCampaignPage} />
+                      </div>
+                    );
+                  })()}
                 </SectionCard>
               </div>
             )}

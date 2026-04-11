@@ -1,7 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { MonthlyReport } from '@/types/monthly-report';
 import { formatCurrency } from '@/lib/utils';
+import Pagination from '@/components/pagination';
+
+const PAGE_SIZE = 10;
 
 interface MonthlyReportTableProps {
   reports: MonthlyReport[];
@@ -10,6 +14,9 @@ interface MonthlyReportTableProps {
 }
 
 export default function MonthlyReportTable({ reports, onEdit, onDelete }: MonthlyReportTableProps) {
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [reports]);
+
   if (reports.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12"
@@ -21,11 +28,14 @@ export default function MonthlyReportTable({ reports, onEdit, onDelete }: Monthl
     );
   }
 
+  const totalPages = Math.ceil(reports.length / PAGE_SIZE);
+  const paged = reports.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
-    <>
+    <div>
       {/* Mobile cards */}
       <div className="flex flex-col gap-3 sm:hidden">
-        {reports.map(r => (
+        {paged.map(r => (
           <div key={r.id} className="rounded-xl p-4"
             style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 1px 6px var(--c-shadow)' }}>
             <div className="flex items-start justify-between mb-1">
@@ -59,7 +69,7 @@ export default function MonthlyReportTable({ reports, onEdit, onDelete }: Monthl
             </tr>
           </thead>
           <tbody style={{ background: 'var(--c-card)' }}>
-            {reports.map(r => (
+            {paged.map(r => (
               <tr key={r.id} className="transition-colors" style={{ borderTop: '1px solid var(--c-td-div)' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--c-td-hover)')}
                 onMouseLeave={e => (e.currentTarget.style.background = '')}>
@@ -83,6 +93,8 @@ export default function MonthlyReportTable({ reports, onEdit, onDelete }: Monthl
           </tbody>
         </table>
       </div>
-    </>
+
+      <Pagination page={page} totalPages={totalPages} totalItems={reports.length} pageSize={PAGE_SIZE} onPage={setPage} />
+    </div>
   );
 }
