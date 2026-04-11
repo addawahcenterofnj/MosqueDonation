@@ -195,11 +195,20 @@ export default function PublicDashboardClient() {
 
         {/* ── Current Month Donors ── */}
         <section>
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
             <span className="text-lg">📅</span>
             <h2 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>{currentMonthLabel} Donors</h2>
+            {/* Live badge — moved from navbar */}
+            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md"
+              style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)' }}>
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-400" />
+              </span>
+              <span className="text-[9px] font-extrabold tracking-widest uppercase leading-none" style={{ color: '#f87171' }}>Live</span>
+            </span>
             {!loading && (
-              <span className="ml-1 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
                 style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }}>
                 {currentMonthDonors.length} donor{currentMonthDonors.length !== 1 ? 's' : ''}
               </span>

@@ -53,6 +53,11 @@ export default function AdminDashboard() {
   // Yearly report year state
   const [reportYear, setReportYear] = useState(now.getFullYear());
 
+  // Section toggle states
+  const [showMonthSection, setShowMonthSection] = useState(true);
+  const [showDonorLookup, setShowDonorLookup] = useState(false);
+  const [showYearlyReport, setShowYearlyReport] = useState(false);
+
   const openModal = (opts: Omit<ModalState, 'open'>) => setModal({ open: true, ...opts });
   const closeModal = () => setModal(m => ({ ...m, open: false }));
 
@@ -123,7 +128,7 @@ export default function AdminDashboard() {
     setShowDonationForm(false); setEditingDonation(null); setSaving(false);
   };
 
-  const handleSplitSubmit = async (base: SplitDonationBase, year: number) => {
+  const handleSplitSubmit = async (base: SplitDonationBase, year: number, months: number[]) => {
     setSaving(true);
 
     if (base.donor_phone) {
@@ -134,24 +139,25 @@ export default function AdminDashboard() {
     }
 
     const total = parseFloat(base.amount);
-    // Distribute evenly; last month absorbs any rounding remainder
-    const perMonth = Math.floor((total / 12) * 100) / 100;
-    const lastMonth = Math.round((total - perMonth * 11) * 100) / 100;
+    const count = months.length;
+    // Distribute evenly; last entry absorbs any rounding remainder
+    const perMonth = Math.floor((total / count) * 100) / 100;
+    const lastAmount = Math.round((total - perMonth * (count - 1)) * 100) / 100;
 
-    const records = Array.from({ length: 12 }, (_, idx) => ({
+    const records = months.map((monthIdx, i) => ({
       donor_name: base.donor_name,
       donor_phone: base.donor_phone || null,
       donor_location: base.donor_location || null,
       campaign_id: null,
-      amount: idx === 11 ? lastMonth : perMonth,
-      donation_date: `${year}-${String(idx + 1).padStart(2, '0')}-01`,
+      amount: i === count - 1 ? lastAmount : perMonth,
+      donation_date: `${year}-${String(monthIdx + 1).padStart(2, '0')}-01`,
       notes: base.notes || null,
     }));
 
     const { error } = await supabase.from('donations').insert(records);
     if (error) { showToast(error.message || 'Something went wrong.', 'error'); setSaving(false); return; }
 
-    showToast(`Split across all 12 months of ${year}!`);
+    showToast(`Split across ${count} month${count !== 1 ? 's' : ''} of ${year}!`);
     await fetchData();
     setShowDonationForm(false);
     setSaving(false);
@@ -267,139 +273,40 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <>
-            {/* ── Month Browser ── */}
-            <div className="rounded-2xl overflow-hidden animate-fade-in"
-              style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 2px 16px var(--c-shadow)' }}>
+            {/* ── Add Donation button — always visible at top ── */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold" style={{ color: 'var(--c-text-2)' }}>
+                {showDonationForm && !editingDonation ? 'New Donation' : showDonationForm ? 'Edit Donation' : ''}
+              </p>
+              {!showDonationForm ? (
+                <button
+                  onClick={() => { setEditingDonation(null); setShowDonationForm(true); setShowMonthSection(true); }}
+                  className="btn-primary">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Donation
+                </button>
+              ) : (
+                <button onClick={() => { setShowDonationForm(false); setEditingDonation(null); }}
+                  className="btn-ghost py-2 px-4 text-sm">
+                  ✕ Cancel
+                </button>
+              )}
+            </div>
 
-              {/* Header */}
-              <div className="px-5 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3"
-                style={{ borderBottom: '1.5px solid var(--c-border)', background: 'var(--c-card-alt)' }}>
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
-                    style={{ background: '#ecfdf5', border: '1.5px solid #a7f3d0' }}>
-                    🗂️
-                  </div>
-                  <div>
-                    <h2 className="font-bold" style={{ color: 'var(--c-text)' }}>Donations by Month</h2>
-                    <p className="text-xs" style={{ color: 'var(--c-text-3)' }}>{donations.length} total records</p>
-                  </div>
+            {/* Add / Edit form — shown above month browser */}
+            {showDonationForm && (
+              <div className="rounded-2xl animate-slide-down"
+                style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 2px 16px var(--c-shadow)' }}>
+                <div className="px-5 sm:px-6 py-4"
+                  style={{ borderBottom: '1.5px solid var(--c-border)', background: 'var(--c-card-alt)' }}>
+                  <h2 className="font-bold" style={{ color: 'var(--c-text)' }}>
+                    {editingDonation ? 'Edit Donation' : 'New Donation'}
+                  </h2>
                 </div>
-
-                {/* Year dropdown */}
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-semibold" style={{ color: 'var(--c-text-2)' }}>Year</label>
-                  <select
-                    value={selectedYear}
-                    onChange={e => { setSelectedYear(Number(e.target.value)); setShowDonationForm(false); setEditingDonation(null); }}
-                    className="input w-28 appearance-none cursor-pointer py-1.5 text-sm"
-                  >
-                    {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {/* Month grid */}
-              <div className="px-5 sm:px-6 py-4"
-                style={{ borderBottom: '1.5px solid var(--c-border)' }}>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-2">
-                  {MONTHS.map((name, idx) => {
-                    const isSelected = idx === selectedMonth;
-                    const hasDonations = donations.some(d => {
-                      const [y, m] = d.donation_date.split('-').map(Number);
-                      return y === selectedYear && m - 1 === idx;
-                    });
-                    return (
-                      <button
-                        key={name}
-                        onClick={() => { setSelectedMonth(idx); setShowDonationForm(false); setEditingDonation(null); }}
-                        className="relative flex flex-col items-center justify-center py-2.5 px-1 rounded-xl font-semibold text-xs transition-all duration-150 focus:outline-none"
-                        style={isSelected ? {
-                          background: 'linear-gradient(135deg, #059669, #047857)',
-                          color: 'white',
-                          boxShadow: '0 4px 14px rgba(5,150,105,0.4)',
-                          transform: 'translateY(-1px)',
-                        } : {
-                          background: 'var(--c-bg)',
-                          color: 'var(--c-text-2)',
-                          border: '1.5px solid var(--c-border)',
-                        }}
-                      >
-                        {name.slice(0, 3)}
-                        {hasDonations && (
-                          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                            style={{ background: isSelected ? 'rgba(255,255,255,0.7)' : 'var(--c-accent)' }} />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Month total bar + action buttons */}
-              <div className="px-5 sm:px-6 py-3 flex items-center justify-between flex-wrap gap-2"
-                style={{ borderBottom: '1.5px solid var(--c-border)', background: 'var(--c-card-alt)' }}>
-                <div className="flex items-center gap-3">
-                  <span className="font-semibold text-sm" style={{ color: 'var(--c-text)' }}>
-                    {MONTHS[selectedMonth]} {selectedYear}
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                    style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }}>
-                    {filteredDonations.length} record{filteredDonations.length !== 1 ? 's' : ''}
-                  </span>
-                  {filteredTotal > 0 && (
-                    <span className="font-bold text-sm" style={{ color: 'var(--c-accent)' }}>
-                      {formatCurrency(filteredTotal)}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {!showDonationForm && filteredDonations.length > 0 && (
-                    <>
-                      <button
-                        onClick={() => generateMonthlyDonorReportPDF(MONTHS[selectedMonth], selectedYear, filteredDonations)}
-                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                        style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1.5px solid var(--c-border-2)' }}>
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span className="hidden sm:inline">Monthly PDF</span>
-                      </button>
-                      <button onClick={handleDeleteMonthDonations}
-                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                        style={{ background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }}>
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        <span className="hidden sm:inline">Delete Month</span>
-                      </button>
-                    </>
-                  )}
-                  {!showDonationForm ? (
-                    <button
-                      onClick={() => { setEditingDonation(null); setShowDonationForm(true); }}
-                      className="btn-primary text-sm py-1.5">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                      </svg>
-                      <span className="hidden sm:inline">Add Donation</span>
-                      <span className="sm:hidden">Add</span>
-                    </button>
-                  ) : (
-                    <button onClick={() => { setShowDonationForm(false); setEditingDonation(null); }}
-                      className="btn-ghost py-1.5 px-3 text-sm">
-                      ✕ Cancel
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Form or table */}
-              <div className="p-5 sm:p-6">
-                {showDonationForm ? (
-                  editingDonation ? (
+                <div className="p-5 sm:p-6">
+                  {editingDonation ? (
                     <DonationForm
                       initial={editingDonation}
                       campaigns={[]}
@@ -416,30 +323,217 @@ export default function AdminDashboard() {
                       onCancel={() => setShowDonationForm(false)}
                       loading={saving}
                     />
-                  )
-                ) : (
-                  <AdminDonationTable
-                    donations={filteredDonations}
-                    onEdit={handleDonationEdit}
-                    onDelete={handleDonationDelete}
-                  />
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-            {/* ── Donor Lookup ── */}
-            <DonorSearch donations={donations} />
+            )}
 
-            {/* ── Yearly Report ── */}
-            <YearlyReportTable
-              donations={donations}
-              year={reportYear}
-              availableYears={availableYears}
-              onYearChange={setReportYear}
-              onDownload={() => generateYearlyReportPDF(
-                reportYear,
-                donations.filter(d => Number(d.donation_date.split('-')[0]) === reportYear)
+            {/* ── Donations by Month (toggleable) ── */}
+            <div className="rounded-2xl overflow-hidden animate-fade-in"
+              style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 2px 16px var(--c-shadow)' }}>
+
+              {/* Toggle header */}
+              <button
+                className="w-full px-5 sm:px-6 py-4 flex items-center justify-between gap-3"
+                style={{ borderBottom: showMonthSection ? '1.5px solid var(--c-border)' : 'none', background: 'var(--c-card-alt)' }}
+                onClick={() => setShowMonthSection(v => !v)}>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
+                    style={{ background: '#ecfdf5', border: '1.5px solid #a7f3d0' }}>🗂️</div>
+                  <div className="text-left">
+                    <h2 className="font-bold" style={{ color: 'var(--c-text)' }}>Donations by Month</h2>
+                    <p className="text-xs" style={{ color: 'var(--c-text-3)' }}>{donations.length} total records</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  {/* Year dropdown — always accessible even when collapsed */}
+                  <div onClick={e => e.stopPropagation()} className="flex items-center gap-2">
+                    <label className="text-sm font-semibold hidden sm:block" style={{ color: 'var(--c-text-2)' }}>Year</label>
+                    <select
+                      value={selectedYear}
+                      onChange={e => { setSelectedYear(Number(e.target.value)); setShowDonationForm(false); setEditingDonation(null); }}
+                      className="input w-24 appearance-none cursor-pointer py-1.5 text-sm"
+                    >
+                      {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  </div>
+                  <svg
+                    className="w-4 h-4 transition-transform duration-200"
+                    style={{ color: 'var(--c-text-3)', transform: showMonthSection ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
+
+              {showMonthSection && (
+                <>
+                  {/* Month grid */}
+                  <div className="px-5 sm:px-6 py-4" style={{ borderBottom: '1.5px solid var(--c-border)' }}>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-2">
+                      {MONTHS.map((name, idx) => {
+                        const isSelected = idx === selectedMonth;
+                        const hasDonations = donations.some(d => {
+                          const [y, m] = d.donation_date.split('-').map(Number);
+                          return y === selectedYear && m - 1 === idx;
+                        });
+                        return (
+                          <button
+                            key={name}
+                            onClick={() => { setSelectedMonth(idx); setEditingDonation(null); }}
+                            className="relative flex flex-col items-center justify-center py-2.5 px-1 rounded-xl font-semibold text-xs transition-all duration-150 focus:outline-none"
+                            style={isSelected ? {
+                              background: 'linear-gradient(135deg, #059669, #047857)',
+                              color: 'white',
+                              boxShadow: '0 4px 14px rgba(5,150,105,0.4)',
+                              transform: 'translateY(-1px)',
+                            } : {
+                              background: 'var(--c-bg)',
+                              color: 'var(--c-text-2)',
+                              border: '1.5px solid var(--c-border)',
+                            }}
+                          >
+                            {name.slice(0, 3)}
+                            {hasDonations && (
+                              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                                style={{ background: isSelected ? 'rgba(255,255,255,0.7)' : 'var(--c-accent)' }} />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Month total bar + secondary actions */}
+                  <div className="px-5 sm:px-6 py-3 flex items-center justify-between flex-wrap gap-2"
+                    style={{ borderBottom: '1.5px solid var(--c-border)', background: 'var(--c-card-alt)' }}>
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-sm" style={{ color: 'var(--c-text)' }}>
+                        {MONTHS[selectedMonth]} {selectedYear}
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                        style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }}>
+                        {filteredDonations.length} record{filteredDonations.length !== 1 ? 's' : ''}
+                      </span>
+                      {filteredTotal > 0 && (
+                        <span className="font-bold text-sm" style={{ color: 'var(--c-accent)' }}>
+                          {formatCurrency(filteredTotal)}
+                        </span>
+                      )}
+                    </div>
+                    {filteredDonations.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => generateMonthlyDonorReportPDF(MONTHS[selectedMonth], selectedYear, filteredDonations)}
+                          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                          style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1.5px solid var(--c-border-2)' }}>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span className="hidden sm:inline">Monthly PDF</span>
+                        </button>
+                        <button onClick={handleDeleteMonthDonations}
+                          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                          style={{ background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }}>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          <span className="hidden sm:inline">Delete Month</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Donation table */}
+                  <div className="p-5 sm:p-6">
+                    <AdminDonationTable
+                      donations={filteredDonations}
+                      onEdit={handleDonationEdit}
+                      onDelete={handleDonationDelete}
+                    />
+                  </div>
+                </>
               )}
-            />
+            </div>
+
+            {/* ── Donor Lookup (toggleable) ── */}
+            <div className="rounded-2xl overflow-hidden"
+              style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 2px 16px var(--c-shadow)' }}>
+              <button
+                className="w-full px-5 sm:px-6 py-4 flex items-center justify-between gap-3"
+                style={{ background: 'var(--c-card-alt)' }}
+                onClick={() => setShowDonorLookup(v => !v)}>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: 'var(--c-accent-bg)', border: '1.5px solid var(--c-border-2)', color: 'var(--c-accent)' }}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <h2 className="font-bold" style={{ color: 'var(--c-text)' }}>Donor Lookup</h2>
+                    <p className="text-xs" style={{ color: 'var(--c-text-3)' }}>Search contribution history by phone</p>
+                  </div>
+                </div>
+                <svg
+                  className="w-4 h-4 transition-transform duration-200 shrink-0"
+                  style={{ color: 'var(--c-text-3)', transform: showDonorLookup ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showDonorLookup && (
+                <div style={{ borderTop: '1.5px solid var(--c-border)' }}>
+                  <DonorSearch donations={donations} hideHeader />
+                </div>
+              )}
+            </div>
+
+            {/* ── Yearly Report (toggleable) ── */}
+            <div className="rounded-2xl overflow-hidden"
+              style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 2px 16px var(--c-shadow)' }}>
+              <button
+                className="w-full px-5 sm:px-6 py-4 flex items-center justify-between gap-3"
+                style={{ background: 'var(--c-card-alt)' }}
+                onClick={() => setShowYearlyReport(v => !v)}>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: 'var(--c-accent-bg)', border: '1.5px solid var(--c-border-2)', color: 'var(--c-accent)' }}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <h2 className="font-bold" style={{ color: 'var(--c-text)' }}>Yearly Report</h2>
+                    <p className="text-xs" style={{ color: 'var(--c-text-3)' }}>Annual breakdown + PDF download</p>
+                  </div>
+                </div>
+                <svg
+                  className="w-4 h-4 transition-transform duration-200 shrink-0"
+                  style={{ color: 'var(--c-text-3)', transform: showYearlyReport ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showYearlyReport && (
+                <div style={{ borderTop: '1.5px solid var(--c-border)' }}>
+                  <YearlyReportTable
+                    donations={donations}
+                    year={reportYear}
+                    availableYears={availableYears}
+                    onYearChange={setReportYear}
+                    hideTitle
+                    onDownload={() => generateYearlyReportPDF(
+                      reportYear,
+                      donations.filter(d => Number(d.donation_date.split('-')[0]) === reportYear)
+                    )}
+                  />
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>

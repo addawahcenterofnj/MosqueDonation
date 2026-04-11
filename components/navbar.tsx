@@ -66,20 +66,13 @@ export default function Navbar({ isAdmin, onLogout }: NavbarProps) {
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 sm:gap-2">
-                  <p className="font-bold text-white leading-none text-sm sm:text-base truncate">
-                    Mosque Donation Tracker
+                  <p className="font-bold text-white leading-tight text-sm sm:text-base">
+                    <span className="sm:hidden">Mosque<br />Donation Tracker</span>
+                    <span className="hidden sm:inline">Mosque Donation Tracker</span>
                   </p>
-                  {/* LIVE badge */}
-                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md shrink-0"
-                    style={{ background: 'rgba(239,68,68,0.25)', border: '1px solid rgba(239,68,68,0.5)' }}>
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-400" />
-                    </span>
-                    <span className="text-[9px] font-extrabold tracking-widest text-red-300 uppercase leading-none">Live</span>
-                  </span>
                 </div>
                 <p className="text-emerald-300 text-[10px] leading-none mt-0.5 hidden sm:block">Transparent Community Giving</p>
+
               </div>
             </Link>
 
