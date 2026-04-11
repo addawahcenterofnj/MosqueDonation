@@ -17,9 +17,10 @@ function formatPhone(digits: string) {
 
 interface DonorSearchProps {
   donations: Donation[];
+  hideHeader?: boolean;
 }
 
-export default function DonorSearch({ donations }: DonorSearchProps) {
+export default function DonorSearch({ donations, hideHeader }: DonorSearchProps) {
   const [rawPhone, setRawPhone] = useState('');
   const [searchedPhone, setSearchedPhone] = useState('');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -80,20 +81,22 @@ export default function DonorSearch({ donations }: DonorSearchProps) {
       style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 2px 16px var(--c-shadow)' }}>
 
       {/* Header */}
-      <div className="px-5 sm:px-6 py-4 flex items-center gap-3"
-        style={{ borderBottom: '1.5px solid var(--c-border)', background: 'var(--c-card-alt)' }}>
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: 'var(--c-accent-bg)', border: '1.5px solid var(--c-border-2)', color: 'var(--c-accent)' }}>
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+      {!hideHeader && (
+        <div className="px-5 sm:px-6 py-4 flex items-center gap-3"
+          style={{ borderBottom: '1.5px solid var(--c-border)', background: 'var(--c-card-alt)' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: 'var(--c-accent-bg)', border: '1.5px solid var(--c-border-2)', color: 'var(--c-accent)' }}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="font-bold" style={{ color: 'var(--c-text)' }}>Donor Lookup</h2>
+            <p className="text-xs" style={{ color: 'var(--c-text-3)' }}>Search by phone to view contribution history</p>
+          </div>
         </div>
-        <div>
-          <h2 className="font-bold" style={{ color: 'var(--c-text)' }}>Donor Lookup</h2>
-          <p className="text-xs" style={{ color: 'var(--c-text-3)' }}>Search by phone to view contribution history</p>
-        </div>
-      </div>
+      )}
 
       {/* Search bar */}
       <div className="px-5 sm:px-6 py-4" style={{ borderBottom: '1.5px solid var(--c-border)' }}>

@@ -16,6 +16,8 @@ interface YearlyReportTableProps {
   onYearChange: (year: number) => void;
   /** When provided, renders a Download PDF button (admin only) */
   onDownload?: () => void;
+  /** Hide the "Yearly Report" title (use when parent provides its own header/toggle) */
+  hideTitle?: boolean;
 }
 
 export default function YearlyReportTable({
@@ -24,6 +26,7 @@ export default function YearlyReportTable({
   availableYears,
   onYearChange,
   onDownload,
+  hideTitle,
 }: YearlyReportTableProps) {
   const yearDonations = useMemo(
     () => donations.filter(d => Number(d.donation_date.split('-')[0]) === year),
@@ -53,15 +56,17 @@ export default function YearlyReportTable({
       <div className="px-5 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3"
         style={{ borderBottom: '1.5px solid var(--c-border)', background: 'var(--c-card-alt)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: 'var(--c-accent-bg)', border: '1.5px solid var(--c-border-2)', color: 'var(--c-accent)' }}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
+          {!hideTitle && (
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'var(--c-accent-bg)', border: '1.5px solid var(--c-border-2)', color: 'var(--c-accent)' }}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+          )}
           <div>
-            <h2 className="font-bold" style={{ color: 'var(--c-text)' }}>Yearly Report</h2>
+            {!hideTitle && <h2 className="font-bold" style={{ color: 'var(--c-text)' }}>Yearly Report</h2>}
             <p className="text-xs" style={{ color: 'var(--c-text-3)' }}>
               {activeMths} active month{activeMths !== 1 ? 's' : ''} · {yearDonations.length} donation{yearDonations.length !== 1 ? 's' : ''}
             </p>
