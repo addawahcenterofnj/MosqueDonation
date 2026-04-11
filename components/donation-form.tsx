@@ -47,7 +47,8 @@ export default function DonationForm({ initial, campaigns, onSubmit, onCancel, l
   return (
     <form onSubmit={handleSubmit} className="space-y-5 animate-slide-down">
       {error && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm"
+          style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}>
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -59,7 +60,7 @@ export default function DonationForm({ initial, campaigns, onSubmit, onCancel, l
       {/* Row 1: Name + Phone */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+          <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
             Donor Name <span className="text-red-400">*</span>
           </label>
           <input type="text" value={form.donor_name}
@@ -67,7 +68,7 @@ export default function DonationForm({ initial, campaigns, onSubmit, onCancel, l
             className="input" placeholder="Full name" />
         </div>
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Phone Number</label>
+          <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>Phone Number</label>
           <input type="text" value={form.donor_phone}
             onChange={e => setForm({ ...form, donor_phone: e.target.value })}
             className="input" placeholder="Optional" />
@@ -76,11 +77,12 @@ export default function DonationForm({ initial, campaigns, onSubmit, onCancel, l
 
       {/* Row 2: Location */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+        <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
           Donor Location
         </label>
         <div className="relative">
-          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+            style={{ color: 'var(--c-text-3)' }}
             fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -96,22 +98,23 @@ export default function DonationForm({ initial, campaigns, onSubmit, onCancel, l
       {/* Row 3: Campaign + Amount */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+          <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
             Campaign <span className="text-red-400">*</span>
           </label>
           <select value={form.campaign_id}
             onChange={e => setForm({ ...form, campaign_id: e.target.value })}
-            className="input appearance-none cursor-pointer bg-white">
+            className="input appearance-none cursor-pointer">
             <option value="">Select a campaign…</option>
             {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+          <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
             Amount ($) <span className="text-red-400">*</span>
           </label>
           <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm pointer-events-none">$</span>
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-sm pointer-events-none"
+              style={{ color: 'var(--c-text-3)' }}>$</span>
             <input type="number" min="0.01" step="0.01" value={form.amount}
               onChange={e => setForm({ ...form, amount: e.target.value })}
               className="input pl-7" placeholder="0.00" />
@@ -121,7 +124,7 @@ export default function DonationForm({ initial, campaigns, onSubmit, onCancel, l
 
       {/* Row 4: Date */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+        <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
           Donation Date <span className="text-red-400">*</span>
         </label>
         <input type="date" value={form.donation_date}
@@ -130,7 +133,7 @@ export default function DonationForm({ initial, campaigns, onSubmit, onCancel, l
 
       {/* Row 5: Notes */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Notes</label>
+        <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>Notes</label>
         <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
           rows={2} className="input resize-none" placeholder="Optional notes…" />
       </div>

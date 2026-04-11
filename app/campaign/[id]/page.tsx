@@ -24,7 +24,7 @@ export default async function CampaignPage({ params }: PageProps) {
   const donationList = donations ?? [];
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#f0fdf4' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--c-bg)' }}>
       <Navbar />
 
       {/* Campaign hero */}
@@ -65,27 +65,27 @@ export default async function CampaignPage({ params }: PageProps) {
           {[
             {
               label: 'Total Collected', value: formatCurrency(totalAmount),
-              bg: '#fff', border: '#a7f3d0', color: '#059669', icon: '💰',
+              border: '#a7f3d0', color: '#059669', icon: '💰',
             },
             {
               label: 'Total Donations', value: String(donationList.length),
-              bg: '#eff6ff', border: '#bfdbfe', color: '#2563eb', icon: '📋',
+              border: '#bfdbfe', color: '#2563eb', icon: '📋',
             },
             {
               label: 'Date Range',
               value: campaign.start_date || campaign.end_date
                 ? `${campaign.start_date ? formatDate(campaign.start_date) : 'N/A'} – ${campaign.end_date ? formatDate(campaign.end_date) : 'Ongoing'}`
                 : 'Not specified',
-              bg: '#f5f3ff', border: '#ddd6fe', color: '#7c3aed', icon: '📅',
+              border: '#ddd6fe', color: '#7c3aed', icon: '📅',
               small: true,
             },
           ].map((s) => (
             <div key={s.label}
               className="rounded-2xl p-5 animate-slide-up"
-              style={{ background: s.bg, border: `1.5px solid ${s.border}`, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+              style={{ background: 'var(--c-card)', border: `1.5px solid ${s.border}`, boxShadow: '0 4px 20px var(--c-shadow)' }}>
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xl">{s.icon}</span>
-                <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">{s.label}</p>
+                <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--c-text-2)' }}>{s.label}</p>
               </div>
               <p className={`font-bold ${s.small ? 'text-sm' : 'text-2xl'}`} style={{ color: s.color }}>
                 {s.value}
@@ -98,9 +98,9 @@ export default async function CampaignPage({ params }: PageProps) {
         <section className="pb-8">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-lg">💳</span>
-            <h2 className="text-lg font-bold text-gray-800">Donations</h2>
+            <h2 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>Donations</h2>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-              style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }}>
+              style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }}>
               {donationList.length} record{donationList.length !== 1 ? 's' : ''}
             </span>
           </div>
@@ -109,7 +109,7 @@ export default async function CampaignPage({ params }: PageProps) {
       </main>
 
       <footer className="py-6 text-center text-xs font-medium"
-        style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', borderTop: '1px solid #a7f3d0', color: '#065f46' }}>
+        style={{ background: 'var(--c-accent-bg)', borderTop: '1px solid var(--c-border)', color: 'var(--c-accent)' }}>
         🕌 Mosque Donation Tracker — Built with transparency for our community
       </footer>
     </div>

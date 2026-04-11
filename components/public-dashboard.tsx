@@ -15,7 +15,7 @@ import { getYearsFromDonations } from '@/lib/utils';
 
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: '#f0fdf4', border: '1.5px solid #d1fae5' }}>
+    <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)' }}>
       <div className="skeleton w-12 h-12 rounded-xl shrink-0" />
       <div className="flex-1 space-y-2">
         <div className="skeleton h-3 w-24 rounded" />
@@ -81,28 +81,21 @@ export default function PublicDashboardClient() {
   const totalAmount = donations.reduce((s, d) => s + Number(d.amount), 0);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--c-bg)' }}>
       <Navbar />
 
       {/* Hero banner */}
-      <div
-        className="relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #064e3b 0%, #065f46 60%, #047857 100%)' }}
-      >
-        {/* Decorative circles */}
-        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-10"
+      <div className="relative overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #064e3b 0%, #065f46 60%, #047857 100%)' }}>
+        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-10 pointer-events-none"
           style={{ background: 'radial-gradient(circle, #6ee7b7, transparent)' }} />
-        <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full opacity-10"
+        <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full opacity-10 pointer-events-none"
           style={{ background: 'radial-gradient(circle, #34d399, transparent)' }} />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
           <div className="animate-slide-down">
-            <p className="text-emerald-300 text-sm font-semibold uppercase tracking-widest mb-2">
-              Community Transparency
-            </p>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight mb-3">
-              Donation Dashboard
-            </h1>
+            <p className="text-emerald-300 text-sm font-semibold uppercase tracking-widest mb-2">Community Transparency</p>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight mb-3">Donation Dashboard</h1>
             <p className="text-emerald-200 text-base sm:text-lg max-w-xl leading-relaxed">
               Every donation is recorded and publicly visible. See how our community comes together to support our mosque.
             </p>
@@ -133,12 +126,11 @@ export default function PublicDashboardClient() {
         {/* Donations */}
         <section>
           <SectionHeader
-            icon="💳"
-            title="Donations"
+            icon="💳" title="Donations"
             badge={loading ? undefined : `${filtered.length} record${filtered.length !== 1 ? 's' : ''}`}
           />
           {loading ? (
-            <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1.5px solid #d1fae5' }}>
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)' }}>
               {[...Array(5)].map((_, i) => <SkeletonRow key={i} />)}
             </div>
           ) : (
@@ -152,7 +144,7 @@ export default function PublicDashboardClient() {
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="rounded-2xl p-5 space-y-3 bg-white" style={{ border: '1.5px solid #d1fae5' }}>
+                <div key={i} className="rounded-2xl p-5 space-y-3" style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)' }}>
                   <div className="skeleton h-5 w-3/4 rounded" />
                   <div className="skeleton h-4 w-full rounded" />
                   <div className="skeleton h-4 w-1/2 rounded" />
@@ -172,10 +164,8 @@ export default function PublicDashboardClient() {
         )}
       </main>
 
-      <footer
-        className="py-6 text-center text-xs text-emerald-800 font-medium"
-        style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', borderTop: '1px solid #a7f3d0' }}
-      >
+      <footer className="py-6 text-center text-xs font-medium transition-colors"
+        style={{ background: 'var(--c-accent-bg)', borderTop: '1px solid var(--c-border)', color: 'var(--c-accent-dark)' }}>
         🕌 Mosque Donation Tracker &mdash; Built with transparency for our community
       </footer>
     </div>
@@ -186,10 +176,10 @@ function SectionHeader({ icon, title, badge }: { icon: string; title: string; ba
   return (
     <div className="flex items-center gap-2 mb-4">
       <span className="text-lg">{icon}</span>
-      <h2 className="text-lg font-bold text-gray-800">{title}</h2>
+      <h2 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>{title}</h2>
       {badge && (
         <span className="ml-1 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-          style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }}>
+          style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }}>
           {badge}
         </span>
       )}

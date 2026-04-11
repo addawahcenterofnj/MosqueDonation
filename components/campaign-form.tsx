@@ -33,7 +33,8 @@ export default function CampaignForm({ initial, onSubmit, onCancel, loading }: C
   return (
     <form onSubmit={handleSubmit} className="space-y-5 animate-slide-down">
       {error && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm"
+          style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}>
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -43,7 +44,7 @@ export default function CampaignForm({ initial, onSubmit, onCancel, loading }: C
       )}
 
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+        <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
           Campaign Name <span className="text-red-400">*</span>
         </label>
         <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
@@ -51,18 +52,18 @@ export default function CampaignForm({ initial, onSubmit, onCancel, loading }: C
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Description</label>
+        <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>Description</label>
         <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
           rows={3} className="input resize-none" placeholder="Short description (optional)…" />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Start Date</label>
+          <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>Start Date</label>
           <input type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} className="input" />
         </div>
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">End Date</label>
+          <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>End Date</label>
           <input type="date" value={form.end_date} onChange={e => setForm({ ...form, end_date: e.target.value })} className="input" />
         </div>
       </div>
@@ -74,7 +75,7 @@ export default function CampaignForm({ initial, onSubmit, onCancel, loading }: C
           <div className={`w-10 h-5 rounded-full transition-colors ${form.is_active ? 'bg-emerald-500' : 'bg-gray-300'}`} />
           <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.is_active ? 'translate-x-5' : ''}`} />
         </div>
-        <span className="text-sm font-semibold text-gray-700">Active campaign</span>
+        <span className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>Active campaign</span>
       </label>
 
       <div className="flex gap-3 pt-1">

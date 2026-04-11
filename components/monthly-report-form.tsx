@@ -35,7 +35,8 @@ export default function MonthlyReportForm({ initial, onSubmit, onCancel, loading
   return (
     <form onSubmit={handleSubmit} className="space-y-5 animate-slide-down">
       {error && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm"
+          style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}>
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -46,7 +47,7 @@ export default function MonthlyReportForm({ initial, onSubmit, onCancel, loading
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+          <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
             Month Name <span className="text-red-400">*</span>
           </label>
           <input
@@ -58,11 +59,12 @@ export default function MonthlyReportForm({ initial, onSubmit, onCancel, loading
           />
         </div>
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+          <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
             Total Amount ($) <span className="text-red-400">*</span>
           </label>
           <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm pointer-events-none">$</span>
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-sm pointer-events-none"
+              style={{ color: 'var(--c-text-3)' }}>$</span>
             <input type="number" min="0" step="0.01" value={form.amount}
               onChange={e => setForm({ ...form, amount: e.target.value })}
               className="input pl-7" placeholder="0.00" />
@@ -71,7 +73,7 @@ export default function MonthlyReportForm({ initial, onSubmit, onCancel, loading
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Notes</label>
+        <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>Notes</label>
         <input type="text" value={form.notes}
           onChange={e => setForm({ ...form, notes: e.target.value })}
           className="input" placeholder="Optional notes for this month…" />

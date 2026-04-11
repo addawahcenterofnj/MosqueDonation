@@ -1,45 +1,104 @@
 @import "tailwindcss";
 
-/* ── Base ─────────────────────────────────────── */
+/* Enable class-based dark mode for Tailwind dark: utilities */
+@variant dark (&:where(.dark, .dark *));
+
+/* ── Design tokens (light) ──────────────────────────── */
+:root {
+  /* backgrounds */
+  --c-bg:          #f0fdf4;
+  --c-card:        #ffffff;
+  --c-card-alt:    #f0fdf4;
+
+  /* borders */
+  --c-border:      #d1fae5;
+  --c-border-2:    #a7f3d0;
+
+  /* emerald accent */
+  --c-accent:      #059669;
+  --c-accent-h:    #047857;
+  --c-accent-bg:   #ecfdf5;
+  --c-accent-dark: #065f46;
+  --c-accent-muted:#a7f3d0;
+
+  /* text */
+  --c-text:        #111827;
+  --c-text-2:      #6b7280;
+  --c-text-3:      #9ca3af;
+  --c-text-accent: #059669;
+
+  /* inputs */
+  --c-input-bg:    #ffffff;
+  --c-input-border:#d1fae5;
+  --c-input-focus: #10b981;
+
+  /* tables */
+  --c-th-bg:       linear-gradient(135deg, #ecfdf5, #d1fae5);
+  --c-th-text:     #065f46;
+  --c-td-div:      #ecfdf5;
+  --c-td-hover:    rgba(236,253,245,0.5);
+
+  /* shadows */
+  --c-shadow:      rgba(5,150,105,0.08);
+  --c-shadow-lg:   rgba(5,150,105,0.15);
+}
+
+/* ── Design tokens (dark) ───────────────────────────── */
+.dark {
+  --c-bg:          #0f172a;
+  --c-card:        #1e293b;
+  --c-card-alt:    #162032;
+
+  --c-border:      #1e4a3a;
+  --c-border-2:    #2d6a50;
+
+  --c-accent:      #34d399;
+  --c-accent-h:    #10b981;
+  --c-accent-bg:   #0f2d1e;
+  --c-accent-dark: #6ee7b7;
+  --c-accent-muted:#1e5c40;
+
+  --c-text:        #e2e8f0;
+  --c-text-2:      #94a3b8;
+  --c-text-3:      #64748b;
+  --c-text-accent: #34d399;
+
+  --c-input-bg:    #1e293b;
+  --c-input-border:#1e4a3a;
+  --c-input-focus: #34d399;
+
+  --c-th-bg:       linear-gradient(135deg, #162032, #0f2d1e);
+  --c-th-text:     #6ee7b7;
+  --c-td-div:      #1e3730;
+  --c-td-hover:    rgba(52,211,153,0.05);
+
+  --c-shadow:      rgba(0,0,0,0.3);
+  --c-shadow-lg:   rgba(0,0,0,0.5);
+}
+
+/* ── Base ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
-  background: #f0fdf4;
-  color: #111827;
+  background: var(--c-bg);
+  color: var(--c-text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* ── Animations ───────────────────────────────── */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to   { opacity: 1; transform: scale(1); }
-}
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
-}
+/* ── Animations ───────────────────────────────────── */
+@keyframes fadeIn    { from { opacity: 0; }              to { opacity: 1; } }
+@keyframes slideUp   { from { opacity: 0; transform: translateY(20px); }  to { opacity: 1; transform: translateY(0); } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn   { from { opacity: 0; transform: scale(0.95); }       to { opacity: 1; transform: scale(1); } }
+@keyframes shimmer   { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-.animate-fade-in   { animation: fadeIn  0.4s ease both; }
-.animate-slide-up  { animation: slideUp 0.45s ease both; }
-.animate-slide-down{ animation: slideDown 0.3s ease both; }
-.animate-scale-in  { animation: scaleIn 0.35s ease both; }
+.animate-fade-in    { animation: fadeIn   0.4s  ease both; }
+.animate-slide-up   { animation: slideUp  0.45s ease both; }
+.animate-slide-down { animation: slideDown 0.3s ease both; }
+.animate-scale-in   { animation: scaleIn  0.35s ease both; }
 
 .stagger-1 { animation-delay: 0.05s; }
 .stagger-2 { animation-delay: 0.12s; }
@@ -54,14 +113,19 @@ body {
   animation: shimmer 1.5s infinite;
   border-radius: 0.5rem;
 }
+.dark .skeleton {
+  background: linear-gradient(90deg, #1e293b 25%, #273549 50%, #1e293b 75%);
+  background-size: 200% 100%;
+}
 
-/* ── Scrollbar ────────────────────────────────── */
+/* ── Scrollbar ────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #6ee7b7; border-radius: 9999px; }
 ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+.dark ::-webkit-scrollbar-thumb { background: #1e4a3a; }
 
-/* ── Component classes (inside @layer so Tailwind utilities can override) ── */
+/* ── Component classes ────────────────────────────── */
 @layer components {
   .glass {
     background: rgba(255,255,255,0.8);
@@ -69,27 +133,30 @@ body {
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255,255,255,0.6);
   }
+  .dark .glass {
+    background: rgba(30,41,59,0.85);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
 
-  /* Form inputs — padding intentionally NOT set here so pl-* utilities work */
   .input {
     width: 100%;
-    border: 1.5px solid #d1fae5;
+    border: 1.5px solid var(--c-input-border);
     border-radius: 0.625rem;
     padding-top: 0.6rem;
     padding-bottom: 0.6rem;
     padding-left: 0.875rem;
     padding-right: 0.875rem;
     font-size: 0.875rem;
-    background: #fff;
-    color: #111827;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    background: var(--c-input-bg);
+    color: var(--c-text);
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.3s;
     outline: none;
   }
   .input:focus {
-    border-color: #10b981;
+    border-color: var(--c-input-focus);
     box-shadow: 0 0 0 3px rgba(16,185,129,0.15);
   }
-  .input::placeholder { color: #9ca3af; }
+  .input::placeholder { color: var(--c-text-3); }
 
   .btn-primary {
     display: inline-flex;
@@ -105,6 +172,7 @@ body {
     cursor: pointer;
     transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
     box-shadow: 0 2px 8px rgba(5,150,105,0.35);
+    border: none;
   }
   .btn-primary:hover:not(:disabled) {
     transform: translateY(-1px);
@@ -120,14 +188,14 @@ body {
     justify-content: center;
     gap: 0.4rem;
     background: transparent;
-    color: #374151;
+    color: var(--c-text);
     font-weight: 500;
     font-size: 0.875rem;
     padding: 0.6rem 1.25rem;
     border-radius: 0.625rem;
-    border: 1.5px solid #e5e7eb;
+    border: 1.5px solid var(--c-border);
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
   }
-  .btn-ghost:hover { background: #f9fafb; border-color: #d1d5db; }
+  .btn-ghost:hover { background: var(--c-card-alt); border-color: var(--c-border-2); }
 }

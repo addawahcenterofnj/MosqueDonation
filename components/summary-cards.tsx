@@ -37,8 +37,7 @@ const cards = [
       </svg>
     ),
     from: '#059669', to: '#047857',
-    light: '#ecfdf5', border: '#a7f3d0',
-    iconBg: '#d1fae5', iconColor: '#065f46',
+    iconBg: 'var(--c-accent-bg)', iconColor: 'var(--c-accent)',
     stagger: 'stagger-1',
   },
   {
@@ -50,8 +49,7 @@ const cards = [
       </svg>
     ),
     from: '#2563eb', to: '#1d4ed8',
-    light: '#eff6ff', border: '#bfdbfe',
-    iconBg: '#dbeafe', iconColor: '#1e40af',
+    iconBg: '#eff6ff', iconColor: '#2563eb',
     stagger: 'stagger-2',
   },
   {
@@ -63,8 +61,7 @@ const cards = [
       </svg>
     ),
     from: '#7c3aed', to: '#6d28d9',
-    light: '#f5f3ff', border: '#ddd6fe',
-    iconBg: '#ede9fe', iconColor: '#4c1d95',
+    iconBg: '#f5f3ff', iconColor: '#7c3aed',
     stagger: 'stagger-3',
   },
 ];
@@ -82,33 +79,27 @@ export default function SummaryCards({ totalAmount, totalDonations, totalCampaig
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       {cards.map((card, i) => (
-        <div
-          key={card.label}
-          className={`animate-slide-up ${card.stagger} rounded-2xl p-5 flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg`}
+        <div key={card.label}
+          className={`animate-slide-up ${card.stagger} rounded-2xl p-5 flex items-center gap-4 transition-all duration-300 hover:-translate-y-1`}
           style={{
-            background: card.light,
-            border: `1.5px solid ${card.border}`,
-            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-          }}
-        >
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: card.iconBg, color: card.iconColor }}
-          >
+            background: 'var(--c-card)',
+            border: '1.5px solid var(--c-border)',
+            boxShadow: '0 2px 12px var(--c-shadow)',
+          }}>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: card.iconBg, color: card.iconColor }}>
             {card.icon}
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-0.5">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: 'var(--c-text-2)' }}>
               {card.label}
             </p>
-            <p
-              className="text-xl sm:text-2xl font-bold"
+            <p className="text-xl sm:text-2xl font-bold"
               style={{
                 background: `linear-gradient(135deg, ${card.from}, ${card.to})`,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
-              }}
-            >
+              }}>
               {values[i]}
             </p>
           </div>

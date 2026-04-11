@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { createClient } from '@/lib/supabase/client';
 import { Campaign, CampaignFormData } from '@/types/campaign';
 import { Donation, DonationFormData } from '@/types/donation';
@@ -28,16 +29,27 @@ interface ModalState {
   onConfirm: () => void;
 }
 
-const SECTION_STYLE: Record<Section, { accent: string; light: string; border: string }> = {
+type SectionStyle = Record<Section, { accent: string; light: string; border: string }>;
+
+const SECTION_STYLE_LIGHT: SectionStyle = {
   campaigns: { accent: '#6366f1', light: '#eef2ff', border: '#c7d2fe' },
   donations:  { accent: '#059669', light: '#ecfdf5', border: '#a7f3d0' },
   reports:    { accent: '#d97706', light: '#fffbeb', border: '#fde68a' },
   monthly:    { accent: '#059669', light: '#ecfdf5', border: '#a7f3d0' },
 };
 
+const SECTION_STYLE_DARK: SectionStyle = {
+  campaigns: { accent: '#818cf8', light: '#1e1b4b', border: '#3730a3' },
+  donations:  { accent: '#34d399', light: '#0f2d1e', border: '#1e5c40' },
+  reports:    { accent: '#fbbf24', light: '#292004', border: '#854d0e' },
+  monthly:    { accent: '#34d399', light: '#0f2d1e', border: '#1e5c40' },
+};
+
 export default function AdminDashboard() {
   const router = useRouter();
   const supabase = createClient();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -265,6 +277,7 @@ export default function AdminDashboard() {
   };
 
   const totalAmount = campaigns.reduce((s, c) => s + (c.total_amount ?? 0), 0);
+  const SECTION_STYLE = isDark ? SECTION_STYLE_DARK : SECTION_STYLE_LIGHT;
   const style = SECTION_STYLE[activeSection];
 
   const navItems: { key: Section; label: string; icon: string }[] = [
@@ -275,7 +288,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#f0fdf4' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--c-bg)' }}>
       <Navbar isAdmin onLogout={handleLogout} />
 
       {/* ── Admin Hero Bar ── */}
@@ -313,7 +326,7 @@ export default function AdminDashboard() {
                   <div key={stat.label} className="text-center px-3 sm:px-4 py-2.5 rounded-xl"
                     style={{ background: stat.bg, border: `1px solid ${stat.border}`, backdropFilter: 'blur(8px)' }}>
                     <p className="text-base sm:text-xl font-extrabold leading-tight" style={{ color: stat.color }}>{stat.value}</p>
-                    <p className="text-[10px] sm:text-xs text-emerald-200 font-medium mt-0.5 whitespace-nowrap">{stat.label}</p>
+                    <p className="text-[10px] sm:text-xs font-medium mt-0.5 whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.7)' }}>{stat.label}</p>
                   </div>
                 ))}
               </div>
@@ -326,7 +339,7 @@ export default function AdminDashboard() {
 
         {/* ── Section Tabs ── */}
         <div className="flex gap-1 p-1.5 rounded-2xl mb-6 w-full"
-          style={{ background: '#d1fae5', border: '1.5px solid #a7f3d0', boxShadow: '0 2px 12px rgba(5,150,105,0.1)' }}>
+          style={{ background: 'var(--c-card-alt)', border: '1.5px solid var(--c-border)', boxShadow: '0 2px 12px var(--c-shadow)' }}>
           {navItems.map(({ key, label, icon }) => {
             const s = SECTION_STYLE[key];
             const isActive = activeSection === key;
@@ -334,8 +347,8 @@ export default function AdminDashboard() {
               <button key={key} onClick={() => setActiveSection(key)}
                 className="flex flex-col xs:flex-row items-center gap-0.5 sm:gap-2 px-1 sm:px-4 py-2 sm:py-2.5 rounded-xl text-[10px] sm:text-sm font-bold transition-all flex-1 justify-center"
                 style={isActive
-                  ? { background: '#fff', color: s.accent, boxShadow: `0 2px 12px rgba(0,0,0,0.1), 0 0 0 1.5px ${s.accent}40` }
-                  : { color: '#047857', background: 'transparent' }
+                  ? { background: 'var(--c-card)', color: s.accent, boxShadow: `0 2px 12px rgba(0,0,0,0.1), 0 0 0 1.5px ${s.accent}40` }
+                  : { color: 'var(--c-text-2)', background: 'transparent' }
                 }>
                 <span className="text-base sm:text-lg leading-none">{icon}</span>
                 <span className="leading-tight">{label}</span>
@@ -343,7 +356,7 @@ export default function AdminDashboard() {
                   <span className="text-[9px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full font-extrabold hidden sm:inline"
                     style={isActive
                       ? { background: s.light, color: s.accent, border: `1px solid ${s.border}` }
-                      : { background: '#a7f3d0', color: '#065f46' }
+                      : { background: 'var(--c-border-2)', color: 'var(--c-th-text)' }
                     }>
                     {key === 'campaigns' ? campaigns.length
                       : key === 'donations' ? donations.length
@@ -359,13 +372,13 @@ export default function AdminDashboard() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-4">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)' }}>
-              <svg className="w-8 h-8 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24">
+              style={{ background: 'var(--c-accent-bg)', border: '1.5px solid var(--c-border-2)' }}>
+              <svg className="w-8 h-8 animate-spin" style={{ color: 'var(--c-accent)' }} fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             </div>
-            <p className="text-gray-400 font-semibold">Loading your dashboard…</p>
+            <p className="font-semibold" style={{ color: 'var(--c-text-2)' }}>Loading your dashboard…</p>
           </div>
         ) : (
           <>
@@ -444,7 +457,7 @@ export default function AdminDashboard() {
                   extraAction={!showMonthlyForm && monthlyReports.length > 0 ? (
                     <button onClick={handleDownloadMonthlyPDF}
                       className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg"
-                      style={{ background: '#ecfdf5', color: '#059669', border: '1.5px solid #a7f3d0' }}>
+                      style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1.5px solid var(--c-border-2)' }}>
                       <DownloadIcon />
                       <span className="hidden sm:inline">Download PDF</span>
                     </button>
@@ -487,31 +500,33 @@ export default function AdminDashboard() {
                 >
                   {monthlyReports.length === 0 ? (
                     <div className="flex flex-col items-center py-10"
-                      style={{ background: '#f0fdf4', borderRadius: '1rem', border: '1.5px dashed #a7f3d0' }}>
+                      style={{ background: 'var(--c-card-alt)', borderRadius: '1rem', border: '1.5px dashed var(--c-border-2)' }}>
                       <span className="text-4xl mb-2">📅</span>
-                      <p className="font-medium text-gray-500">No monthly entries yet</p>
+                      <p className="font-medium" style={{ color: 'var(--c-text-2)' }}>No monthly entries yet</p>
                       <button onClick={() => setActiveSection('monthly')} className="mt-3 btn-primary text-sm py-2">
                         Go to Monthly tab
                       </button>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto rounded-xl" style={{ border: '1.5px solid #d1fae5' }}>
+                    <div className="overflow-x-auto rounded-xl" style={{ border: '1.5px solid var(--c-border)' }}>
                       <table className="min-w-full text-sm">
                         <thead>
-                          <tr style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)' }}>
-                            <th className="px-4 py-3 text-left font-semibold text-emerald-800">Month</th>
-                            <th className="px-4 py-3 text-right font-semibold text-emerald-800">Amount</th>
-                            <th className="px-4 py-3 text-left font-semibold text-emerald-800 hidden sm:table-cell">Notes</th>
+                          <tr style={{ background: 'var(--c-th-bg)' }}>
+                            <th className="px-4 py-3 text-left font-semibold" style={{ color: 'var(--c-th-text)' }}>Month</th>
+                            <th className="px-4 py-3 text-right font-semibold" style={{ color: 'var(--c-th-text)' }}>Amount</th>
+                            <th className="px-4 py-3 text-left font-semibold hidden sm:table-cell" style={{ color: 'var(--c-th-text)' }}>Notes</th>
                           </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-emerald-50">
+                        <tbody style={{ background: 'var(--c-card)' }}>
                           {monthlyReports.map(r => (
-                            <tr key={r.id} className="hover:bg-emerald-50/40 transition-colors">
-                              <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{r.month}</td>
-                              <td className="px-4 py-3 text-right font-bold whitespace-nowrap" style={{ color: '#059669' }}>
+                            <tr key={r.id} className="transition-colors" style={{ borderTop: '1px solid var(--c-td-div)' }}
+                              onMouseEnter={e => (e.currentTarget.style.background = 'var(--c-td-hover)')}
+                              onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                              <td className="px-4 py-3 font-semibold whitespace-nowrap" style={{ color: 'var(--c-text)' }}>{r.month}</td>
+                              <td className="px-4 py-3 text-right font-bold whitespace-nowrap" style={{ color: 'var(--c-accent)' }}>
                                 {formatCurrency(Number(r.amount))}
                               </td>
-                              <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{r.notes || '—'}</td>
+                              <td className="px-4 py-3 hidden sm:table-cell" style={{ color: 'var(--c-text-2)' }}>{r.notes || '—'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -528,9 +543,9 @@ export default function AdminDashboard() {
                 >
                   {campaigns.length === 0 ? (
                     <div className="flex flex-col items-center py-16"
-                      style={{ background: '#f0fdf4', borderRadius: '1rem', border: '1.5px dashed #a7f3d0' }}>
+                      style={{ background: 'var(--c-card-alt)', borderRadius: '1rem', border: '1.5px dashed var(--c-border-2)' }}>
                       <span className="text-5xl mb-3">📄</span>
-                      <p className="font-semibold text-gray-500">No campaigns yet</p>
+                      <p className="font-semibold" style={{ color: 'var(--c-text-2)' }}>No campaigns yet</p>
                       <button onClick={() => setActiveSection('campaigns')} className="mt-4 btn-primary text-sm py-2">
                         Go to Campaigns
                       </button>
@@ -541,21 +556,21 @@ export default function AdminDashboard() {
                         const count = donations.filter(d => d.campaign_id === c.id).length;
                         return (
                           <div key={c.id} className="rounded-2xl overflow-hidden transition-all"
-                            style={{ border: '1.5px solid #e2e8f0', boxShadow: '0 1px 8px rgba(0,0,0,0.04)' }}>
+                            style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 1px 8px var(--c-shadow)' }}>
                             <div className="p-4 space-y-3">
                               <div className="flex items-center gap-3 min-w-0">
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
                                   style={{ background: style.light, border: `1px solid ${style.border}` }}>🎯</div>
                                 <div className="min-w-0 flex-1">
-                                  <p className="font-bold text-gray-900 truncate">{c.name}</p>
+                                  <p className="font-bold truncate" style={{ color: 'var(--c-text)' }}>{c.name}</p>
                                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                    <span className="text-xs font-semibold" style={{ color: '#059669' }}>{formatCurrency(c.total_amount ?? 0)}</span>
-                                    <span className="text-gray-300">·</span>
-                                    <span className="text-xs text-gray-500">{count} donation{count !== 1 ? 's' : ''}</span>
+                                    <span className="text-xs font-semibold" style={{ color: 'var(--c-accent)' }}>{formatCurrency(c.total_amount ?? 0)}</span>
+                                    <span style={{ color: 'var(--c-border-2)' }}>·</span>
+                                    <span className="text-xs" style={{ color: 'var(--c-text-2)' }}>{count} donation{count !== 1 ? 's' : ''}</span>
                                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
                                       style={c.is_active
-                                        ? { background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }
-                                        : { background: '#f3f4f6', color: '#6b7280', border: '1px solid #e5e7eb' }}>
+                                        ? { background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }
+                                        : { background: 'var(--c-card-alt)', color: 'var(--c-text-2)', border: '1px solid var(--c-border)' }}>
                                       {c.is_active ? '● Active' : '○ Ended'}
                                     </span>
                                   </div>
@@ -650,16 +665,16 @@ interface SectionCardProps {
 
 function SectionCard({ icon, title, subtitle, style, showForm, extraAction, primaryAction, children }: SectionCardProps) {
   return (
-    <div className="bg-white rounded-2xl overflow-hidden"
-      style={{ border: `1.5px solid ${showForm ? style.border : '#d1fae5'}`, boxShadow: '0 2px 16px rgba(5,150,105,0.07)' }}>
+    <div className="rounded-2xl overflow-hidden"
+      style={{ background: 'var(--c-card)', border: `1.5px solid ${showForm ? style.border : 'var(--c-border)'}`, boxShadow: '0 2px 16px var(--c-shadow)' }}>
       <div className="px-5 sm:px-6 py-4 flex items-center justify-between"
-        style={{ borderBottom: `1.5px solid ${showForm ? style.border : '#ecfdf5'}`, background: showForm ? style.light : '#f0fdf4' }}>
+        style={{ borderBottom: `1.5px solid ${showForm ? style.border : 'var(--c-border)'}`, background: showForm ? style.light : 'var(--c-card-alt)' }}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
             style={{ background: style.light, border: `1.5px solid ${style.border}` }}>{icon}</div>
           <div>
-            <h2 className="font-bold text-gray-900">{title}</h2>
-            {subtitle && <p className="text-xs text-gray-400">{subtitle}</p>}
+            <h2 className="font-bold" style={{ color: 'var(--c-text)' }}>{title}</h2>
+            {subtitle && <p className="text-xs" style={{ color: 'var(--c-text-3)' }}>{subtitle}</p>}
           </div>
         </div>
         <div className="flex items-center gap-2">

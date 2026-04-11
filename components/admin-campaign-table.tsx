@@ -12,11 +12,11 @@ interface AdminCampaignTableProps {
 export default function AdminCampaignTable({ campaigns, onEdit, onDelete }: AdminCampaignTableProps) {
   if (campaigns.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-gray-400"
-        style={{ background: '#f0fdf4', borderRadius: '1rem', border: '1.5px dashed #a7f3d0' }}>
+      <div className="flex flex-col items-center justify-center py-12"
+        style={{ background: 'var(--c-card-alt)', borderRadius: '1rem', border: '1.5px dashed var(--c-border-2)' }}>
         <span className="text-4xl mb-2">🎯</span>
-        <p className="font-medium text-gray-500">No campaigns yet</p>
-        <p className="text-sm mt-1">Create your first campaign above</p>
+        <p className="font-medium" style={{ color: 'var(--c-text-2)' }}>No campaigns yet</p>
+        <p className="text-sm mt-1" style={{ color: 'var(--c-text-3)' }}>Create your first campaign above</p>
       </div>
     );
   }
@@ -26,28 +26,26 @@ export default function AdminCampaignTable({ campaigns, onEdit, onDelete }: Admi
       {/* Mobile cards */}
       <div className="flex flex-col gap-3 sm:hidden">
         {campaigns.map((c) => (
-          <div key={c.id} className="bg-white rounded-xl p-4"
-            style={{ border: '1.5px solid #d1fae5', boxShadow: '0 1px 6px rgba(5,150,105,0.08)' }}>
+          <div key={c.id} className="rounded-xl p-4"
+            style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 1px 6px var(--c-shadow)' }}>
             <div className="flex items-start justify-between gap-2 mb-2">
-              <p className="font-bold text-gray-900 text-sm">{c.name}</p>
+              <p className="font-bold text-sm" style={{ color: 'var(--c-text)' }}>{c.name}</p>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
                 style={c.is_active
-                  ? { background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }
-                  : { background: '#f3f4f6', color: '#6b7280', border: '1px solid #e5e7eb' }}>
+                  ? { background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }
+                  : { background: 'var(--c-card-alt)', color: 'var(--c-text-2)', border: '1px solid var(--c-border)' }}>
                 {c.is_active ? 'Active' : 'Ended'}
               </span>
             </div>
-            <p className="text-lg font-bold mb-3" style={{ color: '#059669' }}>
+            <p className="text-lg font-bold mb-3" style={{ color: 'var(--c-accent)' }}>
               {formatCurrency(c.total_amount ?? 0)}
             </p>
             <div className="flex gap-2">
-              <button onClick={() => onEdit(c)}
-                className="flex-1 text-sm font-semibold py-1.5 rounded-lg transition-colors"
-                style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
+              <button onClick={() => onEdit(c)} className="flex-1 text-sm font-semibold py-1.5 rounded-lg transition-colors"
+                style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }}>
                 Edit
               </button>
-              <button onClick={() => onDelete(c.id)}
-                className="flex-1 text-sm font-semibold py-1.5 rounded-lg transition-colors"
+              <button onClick={() => onDelete(c.id)} className="flex-1 text-sm font-semibold py-1.5 rounded-lg transition-colors"
                 style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
                 Delete
               </button>
@@ -58,43 +56,46 @@ export default function AdminCampaignTable({ campaigns, onEdit, onDelete }: Admi
 
       {/* Desktop table */}
       <div className="hidden sm:block overflow-x-auto rounded-2xl"
-        style={{ border: '1.5px solid #d1fae5', boxShadow: '0 2px 12px rgba(5,150,105,0.07)' }}>
+        style={{ border: '1.5px solid var(--c-border)', boxShadow: '0 2px 12px var(--c-shadow)' }}>
         <table className="min-w-full text-sm">
           <thead>
-            <tr style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)' }}>
+            <tr style={{ background: 'var(--c-th-bg)' }}>
               {['Name', 'Total', 'Status', 'Start', 'End', 'Actions'].map(h => (
-                <th key={h} className={`px-4 py-3.5 font-semibold text-emerald-800 whitespace-nowrap ${h === 'Total' || h === 'Actions' ? 'text-center' : 'text-left'}`}>
+                <th key={h} className={`px-4 py-3.5 font-semibold whitespace-nowrap ${h === 'Total' || h === 'Actions' ? 'text-center' : 'text-left'}`}
+                  style={{ color: 'var(--c-th-text)' }}>
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-emerald-50">
+          <tbody style={{ background: 'var(--c-card)' }}>
             {campaigns.map((c) => (
-              <tr key={c.id} className="hover:bg-emerald-50/40 transition-colors">
-                <td className="px-4 py-3.5 font-semibold text-gray-900">{c.name}</td>
-                <td className="px-4 py-3.5 text-center font-bold" style={{ color: '#059669' }}>
+              <tr key={c.id} className="transition-colors" style={{ borderTop: '1px solid var(--c-td-div)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--c-td-hover)')}
+                onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                <td className="px-4 py-3.5 font-semibold" style={{ color: 'var(--c-text)' }}>{c.name}</td>
+                <td className="px-4 py-3.5 text-center font-bold" style={{ color: 'var(--c-accent)' }}>
                   {formatCurrency(c.total_amount ?? 0)}
                 </td>
                 <td className="px-4 py-3.5 text-center">
                   <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
                     style={c.is_active
-                      ? { background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }
-                      : { background: '#f3f4f6', color: '#6b7280', border: '1px solid #e5e7eb' }}>
+                      ? { background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }
+                      : { background: 'var(--c-card-alt)', color: 'var(--c-text-2)', border: '1px solid var(--c-border)' }}>
                     {c.is_active ? 'Active' : 'Ended'}
                   </span>
                 </td>
-                <td className="px-4 py-3.5 text-gray-500 whitespace-nowrap">
+                <td className="px-4 py-3.5 whitespace-nowrap" style={{ color: 'var(--c-text-2)' }}>
                   {c.start_date ? formatDate(c.start_date) : '—'}
                 </td>
-                <td className="px-4 py-3.5 text-gray-500 whitespace-nowrap">
+                <td className="px-4 py-3.5 whitespace-nowrap" style={{ color: 'var(--c-text-2)' }}>
                   {c.end_date ? formatDate(c.end_date) : '—'}
                 </td>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center justify-center gap-2">
                     <button onClick={() => onEdit(c)}
                       className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
-                      style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
+                      style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }}>
                       Edit
                     </button>
                     <button onClick={() => onDelete(c.id)}
