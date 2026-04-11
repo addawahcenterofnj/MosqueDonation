@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { createClient } from '@/lib/supabase/client';
 import { Campaign, CampaignFormData } from '@/types/campaign';
@@ -49,8 +49,11 @@ const SECTION_STYLE_DARK: SectionStyle = {
   monthly:    { accent: '#00c47a', light: 'rgba(0,196,122,0.08)', border: 'rgba(0,196,122,0.28)' },
 };
 
+const VALID_SECTIONS: Section[] = ['campaigns', 'donations', 'monthly', 'reports'];
+
 export default function AdminDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
@@ -60,7 +63,12 @@ export default function AdminDashboard() {
   const [monthlyReports, setMonthlyReports] = useState<MonthlyReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeSection, setActiveSection] = useState<Section>('campaigns');
+
+  const initialSection = (() => {
+    const tab = searchParams.get('tab') as Section;
+    return VALID_SECTIONS.includes(tab) ? tab : 'campaigns';
+  })();
+  const [activeSection, setActiveSection] = useState<Section>(initialSection);
 
   const [toast, setToast] = useState('');
   const [toastType, setToastType] = useState<ToastType>('success');
@@ -75,6 +83,12 @@ export default function AdminDashboard() {
   const [modal, setModal] = useState<ModalState>({ open: false, title: '', message: '', onConfirm: () => {} });
   const [reportMonthlyPage, setReportMonthlyPage] = useState(1);
   const [reportCampaignPage, setReportCampaignPage] = useState(1);
+
+  const goToSection = useCallback((section: Section) => {
+    setActiveSection(section);
+    router.replace(`/admin?tab=${section}`, { scroll: false });
+  }, [router]);
+
   const openModal = (opts: Omit<ModalState, 'open'>) => setModal({ open: true, ...opts });
   const closeModal = () => setModal(m => ({ ...m, open: false }));
 
@@ -130,7 +144,7 @@ export default function AdminDashboard() {
 
   const handleCampaignEdit = (campaign: Campaign) => {
     setEditingCampaign(campaign); setShowCampaignForm(true);
-    setActiveSection('campaigns');
+    goToSection('campaigns');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -184,7 +198,7 @@ export default function AdminDashboard() {
 
   const handleDonationEdit = (donation: Donation) => {
     setEditingDonation(donation); setShowDonationForm(true);
-    setActiveSection('donations');
+    goToSection('donations');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -255,7 +269,7 @@ export default function AdminDashboard() {
 
   const handleMonthlyEdit = (r: MonthlyReport) => {
     setEditingMonthly(r); setShowMonthlyForm(true);
-    setActiveSection('monthly');
+    goToSection('monthly');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -350,7 +364,7 @@ export default function AdminDashboard() {
             const s = SECTION_STYLE[key];
             const isActive = activeSection === key;
             return (
-              <button key={key} onClick={() => setActiveSection(key)}
+              <button key={key} onClick={() => goToSection(key as Section)}
                 className="flex flex-col xs:flex-row items-center gap-0.5 sm:gap-2 px-1 sm:px-4 py-2 sm:py-2.5 rounded-xl text-[10px] sm:text-sm font-bold transition-all flex-1 justify-center"
                 style={isActive
                   ? { background: 'var(--c-card)', color: s.accent, boxShadow: `0 2px 12px rgba(0,0,0,0.1), 0 0 0 1.5px ${s.accent}40` }
@@ -509,7 +523,7 @@ export default function AdminDashboard() {
                       style={{ background: 'var(--c-card-alt)', borderRadius: '1rem', border: '1.5px dashed var(--c-border-2)' }}>
                       <span className="text-4xl mb-2">📅</span>
                       <p className="font-medium" style={{ color: 'var(--c-text-2)' }}>No monthly entries yet</p>
-                      <button onClick={() => setActiveSection('monthly')} className="mt-3 btn-primary text-sm py-2">
+                      <button onClick={() => goToSection('monthly')} className="mt-3 btn-primary text-sm py-2">
                         Go to Monthly tab
                       </button>
                     </div>
@@ -559,7 +573,7 @@ export default function AdminDashboard() {
                       style={{ background: 'var(--c-card-alt)', borderRadius: '1rem', border: '1.5px dashed var(--c-border-2)' }}>
                       <span className="text-5xl mb-3">📄</span>
                       <p className="font-semibold" style={{ color: 'var(--c-text-2)' }}>No campaigns yet</p>
-                      <button onClick={() => setActiveSection('campaigns')} className="mt-4 btn-primary text-sm py-2">
+                      <button onClick={() => goToSection('campaigns')} className="mt-4 btn-primary text-sm py-2">
                         Go to Campaigns
                       </button>
                     </div>

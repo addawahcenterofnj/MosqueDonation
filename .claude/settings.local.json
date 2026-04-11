@@ -7,7 +7,13 @@
       "Bash(git commit -m 'Fix middleware to gracefully handle missing Supabase env vars:*)",
       "Bash(git push:*)",
       "Bash(git commit -m 'Redesign: modern UI, animations, mobile-first responsive layout:*)",
-      "Bash(git commit -m 'Admin panel: delete all, confirmation modal, visual redesign:*)"
+      "Bash(git commit -m 'Admin panel: delete all, confirmation modal, visual redesign:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit -m 'Update favicon to custom mosque SVG icon:*)",
+      "Bash(git commit -m 'Fix icon/placeholder overlap by moving custom CSS into @layer components:*)",
+      "Bash(git commit -m 'Add pulsing LIVE badge to navbar:*)",
+      "Bash(git commit:*)",
+      "Bash(npx next:*)"
     ]
   }
 }
