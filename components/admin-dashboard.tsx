@@ -275,30 +275,32 @@ export default function AdminDashboard() {
       {/* ── Admin Hero Bar ── */}
       <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)', borderBottom: '1px solid #1e3a5f' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
-            <div className="animate-slide-down">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full"
-                  style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}>
-                  Admin Panel
-                </span>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-down">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full"
+                    style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}>
+                    Admin Panel
+                  </span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">Dashboard</h1>
+                <p className="text-slate-400 text-sm mt-1">Manage your mosque donation data</p>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Dashboard</h1>
-              <p className="text-slate-400 text-sm mt-1">Manage your mosque donation data</p>
             </div>
 
             {!loading && (
-              <div className="grid grid-cols-4 gap-2 sm:gap-3 animate-fade-in">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 animate-fade-in w-full sm:w-auto">
                 {[
                   { label: 'Total Raised',   value: formatCurrency(totalAmount),      color: '#34d399', bg: 'rgba(52,211,153,0.1)',  border: 'rgba(52,211,153,0.25)' },
                   { label: 'Campaigns',      value: String(campaigns.length),          color: '#818cf8', bg: 'rgba(129,140,248,0.1)', border: 'rgba(129,140,248,0.25)' },
                   { label: 'Donations',      value: String(donations.length),          color: '#38bdf8', bg: 'rgba(56,189,248,0.1)',  border: 'rgba(56,189,248,0.25)' },
                   { label: 'Monthly',        value: String(monthlyReports.length),     color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',  border: 'rgba(251,191,36,0.25)' },
                 ].map(stat => (
-                  <div key={stat.label} className="text-center px-2 sm:px-4 py-2.5 rounded-xl"
+                  <div key={stat.label} className="text-center px-3 sm:px-4 py-2.5 rounded-xl"
                     style={{ background: stat.bg, border: `1px solid ${stat.border}` }}>
-                    <p className="text-sm sm:text-xl font-extrabold" style={{ color: stat.color }}>{stat.value}</p>
-                    <p className="text-[10px] sm:text-xs text-slate-400 font-medium mt-0.5">{stat.label}</p>
+                    <p className="text-base sm:text-xl font-extrabold leading-tight" style={{ color: stat.color }}>{stat.value}</p>
+                    <p className="text-[10px] sm:text-xs text-slate-400 font-medium mt-0.5 whitespace-nowrap">{stat.label}</p>
                   </div>
                 ))}
               </div>
@@ -317,15 +319,15 @@ export default function AdminDashboard() {
             const isActive = activeSection === key;
             return (
               <button key={key} onClick={() => setActiveSection(key)}
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex-1 justify-center"
+                className="flex flex-col xs:flex-row items-center gap-0.5 sm:gap-2 px-1 sm:px-4 py-2 sm:py-2.5 rounded-xl text-[10px] sm:text-sm font-bold transition-all flex-1 justify-center"
                 style={isActive
                   ? { background: '#fff', color: s.accent, boxShadow: `0 2px 12px rgba(0,0,0,0.2), 0 0 0 1.5px ${s.accent}40` }
                   : { color: '#94a3b8', background: 'transparent' }
                 }>
-                <span className="text-sm sm:text-base">{icon}</span>
-                <span>{label}</span>
+                <span className="text-base sm:text-lg leading-none">{icon}</span>
+                <span className="leading-tight">{label}</span>
                 {!loading && (
-                  <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full font-extrabold hidden sm:inline"
+                  <span className="text-[9px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full font-extrabold hidden sm:inline"
                     style={isActive
                       ? { background: s.light, color: s.accent, border: `1px solid ${s.border}` }
                       : { background: 'rgba(255,255,255,0.08)', color: '#64748b' }
@@ -468,11 +470,11 @@ export default function AdminDashboard() {
                         return (
                           <div key={c.id} className="rounded-2xl overflow-hidden transition-all"
                             style={{ border: '1.5px solid #e2e8f0', boxShadow: '0 1px 8px rgba(0,0,0,0.04)' }}>
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4">
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="p-4 space-y-3">
+                              <div className="flex items-center gap-3 min-w-0">
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
                                   style={{ background: style.light, border: `1px solid ${style.border}` }}>🎯</div>
-                                <div className="min-w-0">
+                                <div className="min-w-0 flex-1">
                                   <p className="font-bold text-gray-900 truncate">{c.name}</p>
                                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                     <span className="text-xs font-semibold" style={{ color: '#059669' }}>{formatCurrency(c.total_amount ?? 0)}</span>
@@ -487,18 +489,18 @@ export default function AdminDashboard() {
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2 shrink-0">
+                              <div className="flex items-center gap-2">
                                 <button onClick={() => handleDeleteCampaignDonations(c)}
-                                  className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg"
+                                  className="flex-1 flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg"
                                   style={{ background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }}>
-                                  <TrashIcon /> <span className="hidden sm:inline">Clear Donations</span><span className="sm:hidden">Clear</span>
+                                  <TrashIcon /> Clear Donations
                                 </button>
-                                <button onClick={() => handleDownloadPDF(c)} className="btn-primary text-xs sm:text-sm py-2">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button onClick={() => handleDownloadPDF(c)} className="btn-primary flex-1 text-xs sm:text-sm py-2">
+                                  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                                       d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                   </svg>
-                                  <span className="hidden sm:inline">Download PDF</span><span className="sm:hidden">PDF</span>
+                                  Download PDF
                                 </button>
                               </div>
                             </div>

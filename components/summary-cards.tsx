@@ -102,7 +102,7 @@ export default function SummaryCards({ totalAmount, totalDonations, totalCampaig
               {card.label}
             </p>
             <p
-              className="text-2xl font-bold truncate"
+              className="text-xl sm:text-2xl font-bold"
               style={{
                 background: `linear-gradient(135deg, ${card.from}, ${card.to})`,
                 WebkitBackgroundClip: 'text',

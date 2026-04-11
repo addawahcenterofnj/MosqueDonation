@@ -28,14 +28,14 @@ export default function MonthlyLiveReport({ reports }: MonthlyLiveReportProps) {
       {/* Mobile: cards */}
       <div className="flex flex-col gap-3 sm:hidden">
         {reports.map((r, i) => (
-          <div key={r.id} className="bg-white rounded-xl px-4 py-3.5 flex items-center justify-between animate-slide-up"
+          <div key={r.id} className="bg-white rounded-xl px-4 py-3.5 flex items-center justify-between gap-3 animate-slide-up"
             style={{
               border: '1.5px solid #d1fae5',
               boxShadow: '0 1px 8px rgba(0,0,0,0.05)',
               animationDelay: `${i * 0.05}s`,
             }}>
-            <p className="font-semibold text-gray-800 text-sm">{r.month}</p>
-            <p className="font-extrabold text-base" style={{ color: '#059669' }}>
+            <p className="font-semibold text-gray-800 text-sm min-w-0 truncate">{r.month}</p>
+            <p className="font-extrabold text-base shrink-0" style={{ color: '#059669' }}>
               {formatCurrency(Number(r.amount))}
             </p>
           </div>

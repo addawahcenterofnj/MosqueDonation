@@ -73,7 +73,7 @@ export default function SearchFilters({
       </div>
 
       {hasFilters && (
-        <div className="flex items-center gap-2 animate-fade-in">
+        <div className="flex items-center gap-2 flex-wrap animate-fade-in">
           <span className="text-xs text-gray-400">Active filters:</span>
           {searchName && (
             <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-medium">

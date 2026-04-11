@@ -19,20 +19,22 @@ export default function Navbar({ isAdmin, onLogout }: NavbarProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5 group">
+            <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group min-w-0">
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-xl shrink-0 transition-transform group-hover:scale-110"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-lg sm:text-xl shrink-0 transition-transform group-hover:scale-110"
                 style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
               >
                 🕌
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-bold text-white leading-none text-sm sm:text-base">
-                    Mosque Donation Tracker
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  {/* Short title on mobile, full on sm+ */}
+                  <p className="font-bold text-white leading-none text-sm sm:text-base truncate">
+                    <span className="sm:hidden">Mosque Tracker</span>
+                    <span className="hidden sm:inline">Mosque Donation Tracker</span>
                   </p>
                   {/* LIVE badge */}
-                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md"
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md shrink-0"
                     style={{ background: 'rgba(239,68,68,0.25)', border: '1px solid rgba(239,68,68,0.5)' }}>
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
