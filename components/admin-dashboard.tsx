@@ -14,7 +14,7 @@ import AdminCampaignTable from '@/components/admin-campaign-table';
 import AdminDonationTable from '@/components/admin-donation-table';
 import MonthlyReportTable from '@/components/monthly-report-table';
 import ConfirmModal from '@/components/confirm-modal';
-import { generateCampaignPDF } from '@/lib/pdf';
+import { generateCampaignPDF, generateMonthlyReportPDF } from '@/lib/pdf';
 import { formatCurrency } from '@/lib/utils';
 
 type Section = 'campaigns' | 'donations' | 'reports' | 'monthly';
@@ -32,7 +32,7 @@ const SECTION_STYLE: Record<Section, { accent: string; light: string; border: st
   campaigns: { accent: '#6366f1', light: '#eef2ff', border: '#c7d2fe' },
   donations:  { accent: '#059669', light: '#ecfdf5', border: '#a7f3d0' },
   reports:    { accent: '#d97706', light: '#fffbeb', border: '#fde68a' },
-  monthly:    { accent: '#0ea5e9', light: '#f0f9ff', border: '#bae6fd' },
+  monthly:    { accent: '#059669', light: '#ecfdf5', border: '#a7f3d0' },
 };
 
 export default function AdminDashboard() {
@@ -258,6 +258,12 @@ export default function AdminDashboard() {
     showToast('PDF report downloaded');
   };
 
+  const handleDownloadMonthlyPDF = () => {
+    if (monthlyReports.length === 0) { showToast('No monthly entries to export.', 'error'); return; }
+    generateMonthlyReportPDF(monthlyReports);
+    showToast('Monthly report downloaded');
+  };
+
   const totalAmount = campaigns.reduce((s, c) => s + (c.total_amount ?? 0), 0);
   const style = SECTION_STYLE[activeSection];
 
@@ -435,6 +441,14 @@ export default function AdminDashboard() {
                   subtitle={!showMonthlyForm ? `${monthlyReports.length} entr${monthlyReports.length !== 1 ? 'ies' : 'y'}` : undefined}
                   style={style}
                   showForm={showMonthlyForm}
+                  extraAction={!showMonthlyForm && monthlyReports.length > 0 ? (
+                    <button onClick={handleDownloadMonthlyPDF}
+                      className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg"
+                      style={{ background: '#ecfdf5', color: '#059669', border: '1.5px solid #a7f3d0' }}>
+                      <DownloadIcon />
+                      <span className="hidden sm:inline">Download PDF</span>
+                    </button>
+                  ) : undefined}
                   primaryAction={!showMonthlyForm ? (
                     <button onClick={() => { setEditingMonthly(null); setShowMonthlyForm(true); }} className="btn-primary">
                       <PlusIcon /> <span className="hidden sm:inline">Add Month</span><span className="sm:hidden">Add</span>
@@ -454,7 +468,58 @@ export default function AdminDashboard() {
 
             {/* ════ REPORTS ════ */}
             {activeSection === 'reports' && (
-              <div className="animate-fade-in">
+              <div className="animate-fade-in space-y-5">
+                {/* Monthly Live Report PDF */}
+                <SectionCard
+                  icon="📅" title="Monthly Live Report"
+                  subtitle={`${monthlyReports.length} entr${monthlyReports.length !== 1 ? 'ies' : 'y'}`}
+                  style={SECTION_STYLE.monthly}
+                  showForm={false}
+                  primaryAction={
+                    <button onClick={handleDownloadMonthlyPDF}
+                      disabled={monthlyReports.length === 0}
+                      className="btn-primary text-xs sm:text-sm py-2">
+                      <DownloadIcon />
+                      <span className="hidden sm:inline">Download PDF</span>
+                      <span className="sm:hidden">PDF</span>
+                    </button>
+                  }
+                >
+                  {monthlyReports.length === 0 ? (
+                    <div className="flex flex-col items-center py-10"
+                      style={{ background: '#f0fdf4', borderRadius: '1rem', border: '1.5px dashed #a7f3d0' }}>
+                      <span className="text-4xl mb-2">📅</span>
+                      <p className="font-medium text-gray-500">No monthly entries yet</p>
+                      <button onClick={() => setActiveSection('monthly')} className="mt-3 btn-primary text-sm py-2">
+                        Go to Monthly tab
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-xl" style={{ border: '1.5px solid #d1fae5' }}>
+                      <table className="min-w-full text-sm">
+                        <thead>
+                          <tr style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)' }}>
+                            <th className="px-4 py-3 text-left font-semibold text-emerald-800">Month</th>
+                            <th className="px-4 py-3 text-right font-semibold text-emerald-800">Amount</th>
+                            <th className="px-4 py-3 text-left font-semibold text-emerald-800 hidden sm:table-cell">Notes</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-emerald-50">
+                          {monthlyReports.map(r => (
+                            <tr key={r.id} className="hover:bg-emerald-50/40 transition-colors">
+                              <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{r.month}</td>
+                              <td className="px-4 py-3 text-right font-bold whitespace-nowrap" style={{ color: '#059669' }}>
+                                {formatCurrency(Number(r.amount))}
+                              </td>
+                              <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{r.notes || '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </SectionCard>
+
                 <SectionCard
                   icon="📄" title="Campaign Reports"
                   subtitle="Download PDF or clear donations per campaign"
@@ -559,6 +624,15 @@ function TrashIcon() {
     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  );
+}
+
+function DownloadIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
   );
 }
