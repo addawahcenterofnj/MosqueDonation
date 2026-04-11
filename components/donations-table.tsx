@@ -1,3 +1,5 @@
+'use client';
+
 import { Donation } from '@/types/donation';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
