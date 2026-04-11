@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Donation } from '@/types/donation';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import Pagination from '@/components/pagination';
 
 const PAGE_SIZE = 10;
@@ -11,6 +11,11 @@ interface AdminDonationTableProps {
   donations: Donation[];
   onEdit: (donation: Donation) => void;
   onDelete: (id: string) => void;
+}
+
+function monthLabel(dateStr: string) {
+  const d = new Date(dateStr);
+  return d.toLocaleString('default', { month: 'long', year: 'numeric' });
 }
 
 export default function AdminDonationTable({ donations, onEdit, onDelete }: AdminDonationTableProps) {
@@ -22,8 +27,8 @@ export default function AdminDonationTable({ donations, onEdit, onDelete }: Admi
       <div className="flex flex-col items-center justify-center py-12"
         style={{ background: 'var(--c-card-alt)', borderRadius: '1rem', border: '1.5px dashed var(--c-border-2)' }}>
         <span className="text-4xl mb-2">💳</span>
-        <p className="font-medium" style={{ color: 'var(--c-text-2)' }}>No donations yet</p>
-        <p className="text-sm mt-1" style={{ color: 'var(--c-text-3)' }}>Add your first donation above</p>
+        <p className="font-medium" style={{ color: 'var(--c-text-2)' }}>No donations for this month</p>
+        <p className="text-sm mt-1" style={{ color: 'var(--c-text-3)' }}>Add the first donation above</p>
       </div>
     );
   }
@@ -48,15 +53,7 @@ export default function AdminDonationTable({ donations, onEdit, onDelete }: Admi
                 {formatCurrency(Number(d.amount))}
               </p>
             </div>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {d.campaigns?.name && (
-                <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-                  style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }}>
-                  {d.campaigns.name}
-                </span>
-              )}
-              <span className="text-xs" style={{ color: 'var(--c-text-3)' }}>{formatDate(d.donation_date)}</span>
-            </div>
+            <p className="text-xs mb-3" style={{ color: 'var(--c-text-3)' }}>{monthLabel(d.donation_date)}</p>
             <div className="flex gap-2">
               <button onClick={() => onEdit(d)} className="flex-1 text-sm font-semibold py-1.5 rounded-lg transition-colors"
                 style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }}>Edit</button>
@@ -73,7 +70,7 @@ export default function AdminDonationTable({ donations, onEdit, onDelete }: Admi
         <table className="min-w-full text-sm">
           <thead>
             <tr style={{ background: 'var(--c-th-bg)' }}>
-              {['Donor', 'Campaign', 'Amount', 'Date', 'Phone', 'Location', 'Actions'].map(h => (
+              {['Donor', 'Phone', 'Location', 'Amount', 'Actions'].map(h => (
                 <th key={h} className={`px-4 py-3.5 font-semibold whitespace-nowrap ${h === 'Amount' || h === 'Actions' ? 'text-center' : 'text-left'}`}
                   style={{ color: 'var(--c-th-text)' }}>
                   {h}
@@ -87,18 +84,6 @@ export default function AdminDonationTable({ donations, onEdit, onDelete }: Admi
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--c-td-hover)')}
                 onMouseLeave={e => (e.currentTarget.style.background = '')}>
                 <td className="px-4 py-3.5 font-semibold whitespace-nowrap" style={{ color: 'var(--c-text)' }}>{d.donor_name}</td>
-                <td className="px-4 py-3.5 whitespace-nowrap">
-                  {d.campaigns?.name
-                    ? <span className="text-xs font-medium px-2.5 py-0.5 rounded-full"
-                        style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }}>
-                        {d.campaigns.name}
-                      </span>
-                    : <span style={{ color: 'var(--c-text-3)' }}>—</span>}
-                </td>
-                <td className="px-4 py-3.5 text-center font-bold whitespace-nowrap" style={{ color: 'var(--c-accent)' }}>
-                  {formatCurrency(Number(d.amount))}
-                </td>
-                <td className="px-4 py-3.5 whitespace-nowrap" style={{ color: 'var(--c-text-2)' }}>{formatDate(d.donation_date)}</td>
                 <td className="px-4 py-3.5 whitespace-nowrap" style={{ color: 'var(--c-text-2)' }}>{d.donor_phone || '—'}</td>
                 <td className="px-4 py-3.5 whitespace-nowrap" style={{ color: 'var(--c-text-2)' }}>
                   {d.donor_location
@@ -110,6 +95,9 @@ export default function AdminDonationTable({ donations, onEdit, onDelete }: Admi
                         {d.donor_location}
                       </span>
                     : '—'}
+                </td>
+                <td className="px-4 py-3.5 text-center font-bold whitespace-nowrap" style={{ color: 'var(--c-accent)' }}>
+                  {formatCurrency(Number(d.amount))}
                 </td>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center justify-center gap-2">

@@ -5,6 +5,7 @@ import { Donor } from '@/types/donor';
 import { DonationFormData } from '@/types/donation';
 
 interface AddDonationFormProps {
+  initialMonth?: string;           // "YYYY-MM" — pre-fills the month picker
   onLookupDonor: (phone: string) => Promise<Donor | null>;
   onSubmit: (data: DonationFormData) => Promise<void>;
   onCancel: () => void;
@@ -28,6 +29,7 @@ function currentYearMonth() {
 }
 
 export default function AddDonationForm({
+  initialMonth,
   onLookupDonor,
   onSubmit,
   onCancel,
@@ -45,7 +47,7 @@ export default function AddDonationForm({
   const [newLocation, setNewLocation] = useState('');
 
   // Donation fields
-  const [month, setMonth] = useState(currentYearMonth);
+  const [month, setMonth] = useState(initialMonth ?? currentYearMonth());
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [formError, setFormError] = useState('');

@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Campaign } from '@/types/campaign';
 import { Donation, DonationFormData } from '@/types/donation';
 import { Donor } from '@/types/donor';
 import Navbar from '@/components/navbar';
@@ -12,6 +11,11 @@ import DonationForm from '@/components/donation-form';
 import AdminDonationTable from '@/components/admin-donation-table';
 import ConfirmModal from '@/components/confirm-modal';
 import { formatCurrency } from '@/lib/utils';
+
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
 
 type ToastType = 'success' | 'error';
 
@@ -23,23 +27,25 @@ interface ModalState {
   onConfirm: () => void;
 }
 
-const DONATION_STYLE = { accent: '#059669', light: '#ecfdf5', border: '#a7f3d0' };
-
 export default function AdminDashboard() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [toast, setToast] = useState('');
   const [toastType, setToastType] = useState<ToastType>('success');
+  const [modal, setModal] = useState<ModalState>({ open: false, title: '', message: '', onConfirm: () => {} });
 
   const [showDonationForm, setShowDonationForm] = useState(false);
   const [editingDonation, setEditingDonation] = useState<Donation | null>(null);
-  const [modal, setModal] = useState<ModalState>({ open: false, title: '', message: '', onConfirm: () => {} });
+
+  // Month browser state — default to current month
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth()); // 0-indexed
 
   const openModal = (opts: Omit<ModalState, 'open'>) => setModal({ open: true, ...opts });
   const closeModal = () => setModal(m => ({ ...m, open: false }));
@@ -50,12 +56,11 @@ export default function AdminDashboard() {
   };
 
   const fetchData = useCallback(async () => {
-    const [{ data: cData }, { data: dData }] = await Promise.all([
-      supabase.from('campaigns').select('*').order('created_at', { ascending: false }),
-      supabase.from('donations').select('*, campaigns(id, name)').order('donation_date', { ascending: false }),
-    ]);
-    setCampaigns(cData ?? []);
-    setDonations(dData ?? []);
+    const { data } = await supabase
+      .from('donations')
+      .select('*')
+      .order('donation_date', { ascending: false });
+    setDonations(data ?? []);
     setLoading(false);
   }, [supabase]);
 
@@ -85,15 +90,9 @@ export default function AdminDashboard() {
   const handleDonationSubmit = async (data: DonationFormData) => {
     setSaving(true);
 
-    // Upsert donor record when adding a new donation with a phone number
     if (!editingDonation && data.donor_phone) {
       await supabase.from('donors').upsert(
-        {
-          phone: data.donor_phone,
-          name: data.donor_name,
-          location: data.donor_location || null,
-          updated_at: new Date().toISOString(),
-        },
+        { phone: data.donor_phone, name: data.donor_name, location: data.donor_location || null, updated_at: new Date().toISOString() },
         { onConflict: 'phone', ignoreDuplicates: false }
       );
     }
@@ -126,30 +125,52 @@ export default function AdminDashboard() {
 
   const handleDonationDelete = (id: string) => openModal({
     title: 'Delete Donation',
-    message: 'This will permanently remove this donation record.',
-    confirmLabel: 'Delete Donation',
+    message: 'This will permanently remove this donation record from the database.',
+    confirmLabel: 'Delete',
     onConfirm: async () => {
       closeModal();
       await supabase.from('donations').delete().eq('id', id);
-      await fetchData(); showToast('Donation deleted');
+      await fetchData();
+      showToast('Donation deleted');
     },
   });
 
-  const handleDeleteAllDonations = () => {
-    if (donations.length === 0) return;
+  const handleDeleteMonthDonations = () => {
+    if (filteredDonations.length === 0) return;
     openModal({
-      title: 'Delete All Donations',
-      message: `Permanently delete all ${donations.length} donation records? This cannot be undone.`,
-      confirmLabel: `Delete All (${donations.length})`,
+      title: `Delete All — ${MONTHS[selectedMonth]} ${selectedYear}`,
+      message: `Permanently delete all ${filteredDonations.length} donation${filteredDonations.length !== 1 ? 's' : ''} for ${MONTHS[selectedMonth]} ${selectedYear}? This cannot be undone.`,
+      confirmLabel: `Delete ${filteredDonations.length} Record${filteredDonations.length !== 1 ? 's' : ''}`,
       onConfirm: async () => {
         closeModal(); setSaving(true);
-        await supabase.from('donations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        await fetchData(); showToast('All donations deleted'); setSaving(false);
+        const ids = filteredDonations.map(d => d.id);
+        await supabase.from('donations').delete().in('id', ids);
+        await fetchData();
+        showToast(`Deleted all donations for ${MONTHS[selectedMonth]} ${selectedYear}`);
+        setSaving(false);
       },
     });
   };
 
+  // ── Derived data ───────────────────────────────────────
+  const availableYears = useMemo(() => {
+    const yrs = new Set<number>();
+    yrs.add(now.getFullYear());
+    for (const d of donations) yrs.add(new Date(d.donation_date).getFullYear());
+    return [...yrs].sort((a, b) => b - a);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [donations]);
+
+  const filteredDonations = useMemo(() => donations.filter(d => {
+    const dt = new Date(d.donation_date);
+    return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth;
+  }), [donations, selectedYear, selectedMonth]);
+
+  const filteredTotal = filteredDonations.reduce((s, d) => s + Number(d.amount), 0);
   const totalAmount = donations.reduce((s, d) => s + Number(d.amount), 0);
+
+  // "YYYY-MM" string for the currently selected month — passed to AddDonationForm
+  const selectedMonthStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--c-bg)' }}>
@@ -164,25 +185,21 @@ export default function AdminDashboard() {
           style={{ background: 'radial-gradient(circle, #34d399, transparent)' }} />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-down">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full"
-                    style={{ background: 'rgba(255,255,255,0.15)', color: '#a7f3d0', border: '1px solid rgba(167,243,208,0.4)' }}>
-                    Admin Panel
-                  </span>
-                </div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">Dashboard</h1>
-                <p className="text-emerald-200 text-sm mt-1">Manage mosque donation records</p>
-              </div>
+          <div className="flex flex-col gap-4 animate-slide-down">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full"
+                style={{ background: 'rgba(255,255,255,0.15)', color: '#a7f3d0', border: '1px solid rgba(167,243,208,0.4)' }}>
+                Admin Panel
+              </span>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight mt-1">Dashboard</h1>
+              <p className="text-emerald-200 text-sm mt-1">Manage mosque donation records</p>
             </div>
 
             {!loading && (
               <div className="flex gap-2 sm:gap-3 animate-fade-in">
                 {[
-                  { label: 'Total Raised',  value: formatCurrency(totalAmount), color: '#6ee7b7', bg: 'rgba(255,255,255,0.1)',  border: 'rgba(255,255,255,0.2)' },
-                  { label: 'Donations',     value: String(donations.length),    color: '#a7f3d0', bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.18)' },
+                  { label: 'Total Raised', value: formatCurrency(totalAmount),   color: '#6ee7b7', bg: 'rgba(255,255,255,0.1)',  border: 'rgba(255,255,255,0.2)' },
+                  { label: 'Total Records', value: String(donations.length),     color: '#a7f3d0', bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.18)' },
                 ].map(stat => (
                   <div key={stat.label} className="text-center px-4 sm:px-6 py-2.5 rounded-xl"
                     style={{ background: stat.bg, border: `1px solid ${stat.border}`, backdropFilter: 'blur(8px)' }}>
@@ -196,7 +213,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-1">
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-1 space-y-6">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-4">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
@@ -209,91 +226,154 @@ export default function AdminDashboard() {
             <p className="font-semibold" style={{ color: 'var(--c-text-2)' }}>Loading…</p>
           </div>
         ) : (
-          <div className="rounded-2xl overflow-hidden animate-fade-in"
-            style={{
-              background: 'var(--c-card)',
-              border: `1.5px solid ${showDonationForm ? DONATION_STYLE.border : 'var(--c-border)'}`,
-              boxShadow: '0 2px 16px var(--c-shadow)',
-            }}>
+          <>
+            {/* ── Month Browser ── */}
+            <div className="rounded-2xl overflow-hidden animate-fade-in"
+              style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 2px 16px var(--c-shadow)' }}>
 
-            {/* Card header */}
-            <div className="px-5 sm:px-6 py-4 flex items-center justify-between"
-              style={{
-                borderBottom: `1.5px solid ${showDonationForm ? DONATION_STYLE.border : 'var(--c-border)'}`,
-                background: showDonationForm ? DONATION_STYLE.light : 'var(--c-card-alt)',
-              }}>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
-                  style={{ background: DONATION_STYLE.light, border: `1.5px solid ${DONATION_STYLE.border}` }}>
-                  💳
+              {/* Header */}
+              <div className="px-5 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3"
+                style={{ borderBottom: '1.5px solid var(--c-border)', background: 'var(--c-card-alt)' }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
+                    style={{ background: '#ecfdf5', border: '1.5px solid #a7f3d0' }}>
+                    🗂️
+                  </div>
+                  <div>
+                    <h2 className="font-bold" style={{ color: 'var(--c-text)' }}>Donations by Month</h2>
+                    <p className="text-xs" style={{ color: 'var(--c-text-3)' }}>{donations.length} total records</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="font-bold" style={{ color: 'var(--c-text)' }}>
-                    {editingDonation ? 'Edit Donation' : showDonationForm ? 'New Donation' : 'Donations'}
-                  </h2>
-                  {!showDonationForm && (
-                    <p className="text-xs" style={{ color: 'var(--c-text-3)' }}>{donations.length} total</p>
+
+                {/* Year dropdown */}
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-semibold" style={{ color: 'var(--c-text-2)' }}>Year</label>
+                  <select
+                    value={selectedYear}
+                    onChange={e => { setSelectedYear(Number(e.target.value)); setShowDonationForm(false); setEditingDonation(null); }}
+                    className="input w-28 appearance-none cursor-pointer py-1.5 text-sm"
+                  >
+                    {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Month grid */}
+              <div className="px-5 sm:px-6 py-4"
+                style={{ borderBottom: '1.5px solid var(--c-border)' }}>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-2">
+                  {MONTHS.map((name, idx) => {
+                    const isSelected = idx === selectedMonth;
+                    const hasDonations = donations.some(d => {
+                      const dt = new Date(d.donation_date);
+                      return dt.getFullYear() === selectedYear && dt.getMonth() === idx;
+                    });
+                    return (
+                      <button
+                        key={name}
+                        onClick={() => { setSelectedMonth(idx); setShowDonationForm(false); setEditingDonation(null); }}
+                        className="relative flex flex-col items-center justify-center py-2.5 px-1 rounded-xl font-semibold text-xs transition-all duration-150 focus:outline-none"
+                        style={isSelected ? {
+                          background: 'linear-gradient(135deg, #059669, #047857)',
+                          color: 'white',
+                          boxShadow: '0 4px 14px rgba(5,150,105,0.4)',
+                          transform: 'translateY(-1px)',
+                        } : {
+                          background: 'var(--c-bg)',
+                          color: 'var(--c-text-2)',
+                          border: '1.5px solid var(--c-border)',
+                        }}
+                      >
+                        {name.slice(0, 3)}
+                        {hasDonations && (
+                          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                            style={{ background: isSelected ? 'rgba(255,255,255,0.7)' : 'var(--c-accent)' }} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Month total bar + action buttons */}
+              <div className="px-5 sm:px-6 py-3 flex items-center justify-between flex-wrap gap-2"
+                style={{ borderBottom: '1.5px solid var(--c-border)', background: 'var(--c-card-alt)' }}>
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold text-sm" style={{ color: 'var(--c-text)' }}>
+                    {MONTHS[selectedMonth]} {selectedYear}
+                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                    style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }}>
+                    {filteredDonations.length} record{filteredDonations.length !== 1 ? 's' : ''}
+                  </span>
+                  {filteredTotal > 0 && (
+                    <span className="font-bold text-sm" style={{ color: 'var(--c-accent)' }}>
+                      {formatCurrency(filteredTotal)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {!showDonationForm && filteredDonations.length > 0 && (
+                    <button onClick={handleDeleteMonthDonations}
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                      style={{ background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }}>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      <span className="hidden sm:inline">Delete Month</span>
+                    </button>
+                  )}
+                  {!showDonationForm ? (
+                    <button
+                      onClick={() => { setEditingDonation(null); setShowDonationForm(true); }}
+                      className="btn-primary text-sm py-1.5">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                      </svg>
+                      <span className="hidden sm:inline">Add Donation</span>
+                      <span className="sm:hidden">Add</span>
+                    </button>
+                  ) : (
+                    <button onClick={() => { setShowDonationForm(false); setEditingDonation(null); }}
+                      className="btn-ghost py-1.5 px-3 text-sm">
+                      ✕ Cancel
+                    </button>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                {!showDonationForm && donations.length > 0 && (
-                  <button onClick={handleDeleteAllDonations}
-                    className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg"
-                    style={{ background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }}>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    <span className="hidden sm:inline">Delete All</span>
-                  </button>
-                )}
-                {!showDonationForm ? (
-                  <button onClick={() => { setEditingDonation(null); setShowDonationForm(true); }} className="btn-primary">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span className="hidden sm:inline">Add Donation</span>
-                    <span className="sm:hidden">Add</span>
-                  </button>
+              {/* Form or table */}
+              <div className="p-5 sm:p-6">
+                {showDonationForm ? (
+                  editingDonation ? (
+                    <DonationForm
+                      initial={editingDonation}
+                      campaigns={[]}
+                      onSubmit={handleDonationSubmit}
+                      onCancel={() => { setShowDonationForm(false); setEditingDonation(null); }}
+                      loading={saving}
+                    />
+                  ) : (
+                    <AddDonationForm
+                      initialMonth={selectedMonthStr}
+                      onLookupDonor={lookupDonor}
+                      onSubmit={handleDonationSubmit}
+                      onCancel={() => setShowDonationForm(false)}
+                      loading={saving}
+                    />
+                  )
                 ) : (
-                  <button onClick={() => { setShowDonationForm(false); setEditingDonation(null); }}
-                    className="btn-ghost py-2 px-3 text-sm">
-                    ✕ Cancel
-                  </button>
+                  <AdminDonationTable
+                    donations={filteredDonations}
+                    onEdit={handleDonationEdit}
+                    onDelete={handleDonationDelete}
+                  />
                 )}
               </div>
             </div>
-
-            {/* Card body */}
-            <div className="p-5 sm:p-6">
-              {showDonationForm ? (
-                editingDonation ? (
-                  <DonationForm
-                    initial={editingDonation}
-                    campaigns={campaigns}
-                    onSubmit={handleDonationSubmit}
-                    onCancel={() => { setShowDonationForm(false); setEditingDonation(null); }}
-                    loading={saving}
-                  />
-                ) : (
-                  <AddDonationForm
-                    onLookupDonor={lookupDonor}
-                    onSubmit={handleDonationSubmit}
-                    onCancel={() => setShowDonationForm(false)}
-                    loading={saving}
-                  />
-                )
-              ) : (
-                <AdminDonationTable
-                  donations={donations}
-                  onEdit={handleDonationEdit}
-                  onDelete={handleDonationDelete}
-                />
-              )}
-            </div>
-          </div>
+          </>
         )}
       </div>
 

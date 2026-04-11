@@ -42,6 +42,16 @@ export default function PublicDashboardClient() {
       setLoading(false);
     }
     load();
+
+    // Real-time: re-fetch whenever admin adds, edits, or deletes a donation
+    const channel = supabase
+      .channel('donations-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'donations' }, () => {
+        load();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
