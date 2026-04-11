@@ -578,16 +578,17 @@ export default function AdminDashboard() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <button onClick={() => handleDeleteCampaignDonations(c)}
-                                  className="flex-1 flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg"
+                                  className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold px-2 sm:px-3 py-2 rounded-lg min-w-0"
                                   style={{ background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }}>
-                                  <TrashIcon /> Clear Donations
+                                  <TrashIcon />
+                                  <span className="truncate"><span className="hidden xs:inline">Clear </span>Donations</span>
                                 </button>
-                                <button onClick={() => handleDownloadPDF(c)} className="btn-primary flex-1 text-xs sm:text-sm py-2">
+                                <button onClick={() => handleDownloadPDF(c)} className="btn-primary flex-1 text-xs py-2 px-2 sm:px-3 min-w-0">
                                   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                                       d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                   </svg>
-                                  Download PDF
+                                  <span className="truncate">Download PDF</span>
                                 </button>
                               </div>
                             </div>
