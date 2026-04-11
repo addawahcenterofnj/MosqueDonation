@@ -13,6 +13,7 @@ import YearlyReportTable from '@/components/yearly-report-table';
 import ConfirmModal from '@/components/confirm-modal';
 import { formatCurrency } from '@/lib/utils';
 import { generateYearlyReportPDF, generateMonthlyDonorReportPDF } from '@/lib/pdf';
+import { compressImage } from '@/lib/image-compress';
 import DonorSearch from '@/components/donor-search';
 
 const MONTHS = [
@@ -53,10 +54,13 @@ export default function AdminDashboard() {
   // Yearly report year state
   const [reportYear, setReportYear] = useState(now.getFullYear());
 
-  // Section toggle states
-  const [showMonthSection, setShowMonthSection] = useState(true);
+  // Section toggle states — all off by default
+  const [showMonthSection, setShowMonthSection] = useState(false);
   const [showDonorLookup, setShowDonorLookup] = useState(false);
   const [showYearlyReport, setShowYearlyReport] = useState(false);
+
+  // Receipts: key = `${year}-${month}` (month 1-based), value = public URL
+  const [receipts, setReceipts] = useState<Record<string, string>>({});
 
   const openModal = (opts: Omit<ModalState, 'open'>) => setModal({ open: true, ...opts });
   const closeModal = () => setModal(m => ({ ...m, open: false }));
@@ -75,12 +79,24 @@ export default function AdminDashboard() {
     setLoading(false);
   }, [supabase]);
 
+  const fetchReceipts = useCallback(async () => {
+    const { data } = await supabase.from('monthly_receipts').select('year, month, storage_path');
+    if (!data) return;
+    const map: Record<string, string> = {};
+    for (const r of data) {
+      const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(r.storage_path);
+      map[`${r.year}-${r.month}`] = publicUrl;
+    }
+    setReceipts(map);
+  }, [supabase]);
+
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push('/login'); return; }
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
       if (!profile || profile.role !== 'admin') { router.push('/'); return; }
       fetchData();
+      fetchReceipts();
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -163,6 +179,25 @@ export default function AdminDashboard() {
     setSaving(false);
   };
 
+  const handleUploadReceipt = async (year: number, month: number, file: File) => {
+    try {
+      const compressed = await compressImage(file);
+      const path = `${year}/${String(month).padStart(2, '0')}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from('receipts')
+        .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+      if (uploadError) { showToast(uploadError.message, 'error'); return; }
+      await supabase.from('monthly_receipts').upsert(
+        { year, month, storage_path: path },
+        { onConflict: 'year,month' }
+      );
+      await fetchReceipts();
+      showToast('Receipt uploaded!');
+    } catch {
+      showToast('Upload failed — please try again.', 'error');
+    }
+  };
+
   const handleDonationEdit = (donation: Donation) => {
     setEditingDonation(donation);
     setShowDonationForm(true);
@@ -214,6 +249,11 @@ export default function AdminDashboard() {
 
   const filteredTotal = filteredDonations.reduce((s, d) => s + Number(d.amount), 0);
   const totalAmount = donations.reduce((s, d) => s + Number(d.amount), 0);
+  const uniqueDonorCount = useMemo(() => {
+    const keys = new Set<string>();
+    for (const d of donations) keys.add(d.donor_phone ?? d.donor_name);
+    return keys.size;
+  }, [donations]);
 
   // "YYYY-MM" string for the currently selected month — passed to AddDonationForm
   const selectedMonthStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
@@ -242,17 +282,41 @@ export default function AdminDashboard() {
             </div>
 
             {!loading && (
-              <div className="flex gap-2 sm:gap-3 animate-fade-in">
-                {[
-                  { label: 'Total Raised', value: formatCurrency(totalAmount),   color: '#6ee7b7', bg: 'rgba(255,255,255,0.1)',  border: 'rgba(255,255,255,0.2)' },
-                  { label: 'Total Records', value: String(donations.length),     color: '#a7f3d0', bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.18)' },
-                ].map(stat => (
-                  <div key={stat.label} className="text-center px-4 sm:px-6 py-2.5 rounded-xl"
-                    style={{ background: stat.bg, border: `1px solid ${stat.border}`, backdropFilter: 'blur(8px)' }}>
-                    <p className="text-base sm:text-xl font-extrabold leading-tight" style={{ color: stat.color }}>{stat.value}</p>
-                    <p className="text-[10px] sm:text-xs font-medium mt-0.5 whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.7)' }}>{stat.label}</p>
+              <div className="grid grid-cols-2 gap-3 animate-fade-in">
+                {/* Card 1 — Total Donors */}
+                <div className="flex items-center gap-3 rounded-xl px-4 py-3"
+                  style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}>
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: 'rgba(255,255,255,0.15)', color: '#a7f3d0' }}>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
                   </div>
-                ))}
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-300 leading-none">Total Donors</p>
+                    <p className="text-xl sm:text-2xl font-extrabold text-white leading-tight mt-0.5">
+                      {uniqueDonorCount}
+                    </p>
+                  </div>
+                </div>
+                {/* Card 2 — Total Raised */}
+                <div className="flex items-center gap-3 rounded-xl px-4 py-3"
+                  style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}>
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: 'rgba(255,255,255,0.15)', color: '#6ee7b7' }}>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-300 leading-none">Total Raised</p>
+                    <p className="text-xl sm:text-2xl font-extrabold text-white leading-tight mt-0.5">
+                      {formatCurrency(totalAmount)}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -424,7 +488,10 @@ export default function AdminDashboard() {
                     {filteredDonations.length > 0 && (
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => generateMonthlyDonorReportPDF(MONTHS[selectedMonth], selectedYear, filteredDonations)}
+                          onClick={async () => {
+                            const receiptUrl = receipts[`${selectedYear}-${selectedMonth + 1}`];
+                            await generateMonthlyDonorReportPDF(MONTHS[selectedMonth], selectedYear, filteredDonations, receiptUrl);
+                          }}
                           className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
                           style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1.5px solid var(--c-border-2)' }}>
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -526,6 +593,8 @@ export default function AdminDashboard() {
                     availableYears={availableYears}
                     onYearChange={setReportYear}
                     hideTitle
+                    receipts={receipts}
+                    onUploadReceipt={handleUploadReceipt}
                     onDownload={() => generateYearlyReportPDF(
                       reportYear,
                       donations.filter(d => Number(d.donation_date.split('-')[0]) === reportYear)

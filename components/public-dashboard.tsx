@@ -42,6 +42,9 @@ export default function PublicDashboardClient() {
   const [showDonorLookup, setShowDonorLookup] = useState(false);
   const [showYearlyReport, setShowYearlyReport] = useState(false);
 
+  // Receipts: key = `${year}-${month}` (month 1-based), value = public URL
+  const [receipts, setReceipts] = useState<Record<string, string>>({});
+
   useEffect(() => {
     async function load() {
       const { data } = await supabase
@@ -51,7 +54,20 @@ export default function PublicDashboardClient() {
       setDonations(data ?? []);
       setLoading(false);
     }
+
+    async function loadReceipts() {
+      const { data } = await supabase.from('monthly_receipts').select('year, month, storage_path');
+      if (!data) return;
+      const map: Record<string, string> = {};
+      for (const r of data) {
+        const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(r.storage_path);
+        map[`${r.year}-${r.month}`] = publicUrl;
+      }
+      setReceipts(map);
+    }
+
     load();
+    loadReceipts();
 
     // Real-time: re-fetch whenever admin adds, edits, or deletes a donation
     const channel = supabase
@@ -371,6 +387,7 @@ export default function PublicDashboardClient() {
                 availableYears={availableYears}
                 onYearChange={setReportYear}
                 hideTitle
+                receipts={receipts}
               />
             </div>
           )}

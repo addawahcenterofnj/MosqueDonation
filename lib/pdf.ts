@@ -4,6 +4,7 @@ import { Campaign } from '@/types/campaign';
 import { Donation } from '@/types/donation';
 import { MonthlyReport } from '@/types/monthly-report';
 import { formatCurrency, formatDate } from './utils';
+import { urlToBase64, getImageDimensions } from './image-compress';
 
 const MONTHS_FULL = [
   'January','February','March','April','May','June',
@@ -74,11 +75,36 @@ export function generateYearlyReportPDF(year: number, donations: Donation[]) {
   doc.save(`mosque-${year}-annual-report.pdf`);
 }
 
+/** Append a receipt image as the last page of a PDF. */
+async function appendReceiptPage(doc: jsPDF, receiptUrl: string) {
+  try {
+    const base64 = await urlToBase64(receiptUrl);
+    const { w: imgW, h: imgH } = await getImageDimensions(base64);
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const maxW = pageW - 40;
+    const maxH = pageH - 60;
+    const scale = Math.min(maxW / imgW, maxH / imgH, 1);
+    const drawW = imgW * scale;
+    const drawH = imgH * scale;
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.setTextColor(6, 78, 59);
+    doc.text('Receipt', pageW / 2, 18, { align: 'center' });
+    doc.setDrawColor(167, 243, 208);
+    doc.line(20, 22, pageW - 20, 22);
+    doc.addImage(base64, 'JPEG', (pageW - drawW) / 2, 28, drawW, drawH);
+  } catch {
+    // If fetch fails (CORS, etc.) skip the receipt page silently
+  }
+}
+
 /** Monthly donor report: full donor list with amounts + total. */
-export function generateMonthlyDonorReportPDF(
+export async function generateMonthlyDonorReportPDF(
   monthName: string,
   year: number,
-  donations: Donation[]
+  donations: Donation[],
+  receiptUrl?: string
 ) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -122,6 +148,7 @@ export function generateMonthlyDonorReportPDF(
     margin: { left: 20, right: 20 },
   });
 
+  if (receiptUrl) await appendReceiptPage(doc, receiptUrl);
   pdfFooter(doc);
   doc.save(`mosque-${monthName.toLowerCase()}-${year}-donors.pdf`);
 }
