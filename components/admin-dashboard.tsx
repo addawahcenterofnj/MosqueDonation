@@ -9,8 +9,10 @@ import Navbar from '@/components/navbar';
 import AddDonationForm from '@/components/add-donation-form';
 import DonationForm from '@/components/donation-form';
 import AdminDonationTable from '@/components/admin-donation-table';
+import YearlyReportTable from '@/components/yearly-report-table';
 import ConfirmModal from '@/components/confirm-modal';
 import { formatCurrency } from '@/lib/utils';
+import { generateYearlyReportPDF, generateMonthlyDonorReportPDF } from '@/lib/pdf';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -46,6 +48,9 @@ export default function AdminDashboard() {
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth()); // 0-indexed
+
+  // Yearly report year state
+  const [reportYear, setReportYear] = useState(now.getFullYear());
 
   const openModal = (opts: Omit<ModalState, 'open'>) => setModal({ open: true, ...opts });
   const closeModal = () => setModal(m => ({ ...m, open: false }));
@@ -315,15 +320,27 @@ export default function AdminDashboard() {
 
                 <div className="flex items-center gap-2">
                   {!showDonationForm && filteredDonations.length > 0 && (
-                    <button onClick={handleDeleteMonthDonations}
-                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                      style={{ background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }}>
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      <span className="hidden sm:inline">Delete Month</span>
-                    </button>
+                    <>
+                      <button
+                        onClick={() => generateMonthlyDonorReportPDF(MONTHS[selectedMonth], selectedYear, filteredDonations)}
+                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                        style={{ background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1.5px solid var(--c-border-2)' }}>
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="hidden sm:inline">Monthly PDF</span>
+                      </button>
+                      <button onClick={handleDeleteMonthDonations}
+                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                        style={{ background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca' }}>
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <span className="hidden sm:inline">Delete Month</span>
+                      </button>
+                    </>
                   )}
                   {!showDonationForm ? (
                     <button
@@ -373,6 +390,17 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
+            {/* ── Yearly Report ── */}
+            <YearlyReportTable
+              donations={donations}
+              year={reportYear}
+              availableYears={availableYears}
+              onYearChange={setReportYear}
+              onDownload={() => generateYearlyReportPDF(
+                reportYear,
+                donations.filter(d => Number(d.donation_date.split('-')[0]) === reportYear)
+              )}
+            />
           </>
         )}
       </div>
