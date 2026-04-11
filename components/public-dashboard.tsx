@@ -178,7 +178,7 @@ export default function PublicDashboardClient() {
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-300 leading-none">
                   Total Donors
                 </p>
-                <p className="text-xl sm:text-2xl font-extrabold text-white leading-tight mt-0.5">
+                <p className="text-lg sm:text-xl font-extrabold text-white leading-tight mt-0.5 break-all">
                   {loading ? '—' : uniqueDonorCount}
                 </p>
               </div>
@@ -198,7 +198,7 @@ export default function PublicDashboardClient() {
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-300 leading-none">
                   {now.getFullYear()} Raised
                 </p>
-                <p className="text-xl sm:text-2xl font-extrabold text-white leading-tight mt-0.5">
+                <p className="text-lg sm:text-xl font-extrabold text-white leading-tight mt-0.5 break-all">
                   {loading ? '—' : formatCurrency(thisYearTotal)}
                 </p>
               </div>

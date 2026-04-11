@@ -295,7 +295,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-300 leading-none">Total Donors</p>
-                    <p className="text-xl sm:text-2xl font-extrabold text-white leading-tight mt-0.5">
+                    <p className="text-lg sm:text-xl font-extrabold text-white leading-tight mt-0.5 break-all">
                       {uniqueDonorCount}
                     </p>
                   </div>
@@ -312,7 +312,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-300 leading-none">Total Raised</p>
-                    <p className="text-xl sm:text-2xl font-extrabold text-white leading-tight mt-0.5">
+                    <p className="text-lg sm:text-xl font-extrabold text-white leading-tight mt-0.5 break-all">
                       {formatCurrency(totalAmount)}
                     </p>
                   </div>
@@ -338,13 +338,10 @@ export default function AdminDashboard() {
         ) : (
           <>
             {/* ── Add Donation button — always visible at top ── */}
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold" style={{ color: 'var(--c-text-2)' }}>
-                {showDonationForm && !editingDonation ? 'New Donation' : showDonationForm ? 'Edit Donation' : ''}
-              </p>
+            <div className="flex items-center">
               {!showDonationForm ? (
                 <button
-                  onClick={() => { setEditingDonation(null); setShowDonationForm(true); setShowMonthSection(true); }}
+                  onClick={() => { setEditingDonation(null); setShowDonationForm(true); }}
                   className="btn-primary">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -410,17 +407,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  {/* Year dropdown — always accessible even when collapsed */}
-                  <div onClick={e => e.stopPropagation()} className="flex items-center gap-2">
-                    <label className="text-sm font-semibold hidden sm:block" style={{ color: 'var(--c-text-2)' }}>Year</label>
-                    <select
-                      value={selectedYear}
-                      onChange={e => { setSelectedYear(Number(e.target.value)); setShowDonationForm(false); setEditingDonation(null); }}
-                      className="input w-24 appearance-none cursor-pointer py-1.5 text-sm"
-                    >
-                      {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
-                    </select>
-                  </div>
                   <svg
                     className="w-4 h-4 transition-transform duration-200"
                     style={{ color: 'var(--c-text-3)', transform: showMonthSection ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -432,6 +418,19 @@ export default function AdminDashboard() {
 
               {showMonthSection && (
                 <>
+                  {/* Year selector inside section */}
+                  <div className="px-5 sm:px-6 py-3 flex items-center gap-3"
+                    style={{ borderBottom: '1.5px solid var(--c-border)', background: 'var(--c-card-alt)' }}>
+                    <label className="text-sm font-semibold" style={{ color: 'var(--c-text-2)' }}>Year</label>
+                    <select
+                      value={selectedYear}
+                      onChange={e => { setSelectedYear(Number(e.target.value)); setShowDonationForm(false); setEditingDonation(null); }}
+                      className="input w-28 appearance-none cursor-pointer py-1.5 text-sm"
+                    >
+                      {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  </div>
+
                   {/* Month grid */}
                   <div className="px-5 sm:px-6 py-4" style={{ borderBottom: '1.5px solid var(--c-border)' }}>
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-2">
