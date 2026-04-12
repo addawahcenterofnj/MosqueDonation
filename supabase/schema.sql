@@ -1,45 +1,40 @@
 -- ============================================================
--- Mosque Donation Tracker - Supabase Schema
--- Run this entire script in the Supabase SQL Editor
+-- Mosque Donation Tracker — Supabase Schema (consolidated)
+-- Safe to run on an existing database — uses IF NOT EXISTS /
+-- DROP IF EXISTS / CREATE OR REPLACE throughout.
 -- ============================================================
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================================
--- TABLE: profiles
--- Links to auth.users, stores role
+-- TABLES
 -- ============================================================
+
 CREATE TABLE IF NOT EXISTS public.profiles (
-  id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  email       TEXT,
-  role        TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id         UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email      TEXT,
+  role       TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ============================================================
--- TABLE: campaigns
--- ============================================================
 CREATE TABLE IF NOT EXISTS public.campaigns (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name         TEXT NOT NULL,
-  description  TEXT,
-  start_date   DATE,
-  end_date     DATE,
-  is_active    BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name        TEXT NOT NULL,
+  description TEXT,
+  start_date  DATE,
+  end_date    DATE,
+  is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ============================================================
--- TABLE: donations
--- ============================================================
 CREATE TABLE IF NOT EXISTS public.donations (
   id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   donor_name     TEXT NOT NULL,
   donor_phone    TEXT,
   donor_location TEXT,
-  campaign_id    UUID NOT NULL REFERENCES public.campaigns(id) ON DELETE RESTRICT,
+  campaign_id    UUID REFERENCES public.campaigns(id) ON DELETE SET NULL,
   amount         NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
   donation_date  DATE NOT NULL,
   notes          TEXT,
@@ -47,21 +42,31 @@ CREATE TABLE IF NOT EXISTS public.donations (
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ============================================================
--- TABLE: monthly_reports
--- ============================================================
-CREATE TABLE IF NOT EXISTS public.monthly_reports (
-  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  month      DATE NOT NULL UNIQUE,   -- stored as first day of month: YYYY-MM-01
-  amount     NUMERIC(12, 2) NOT NULL CHECK (amount >= 0),
-  notes      TEXT,
+-- Make campaign_id nullable if it was previously NOT NULL
+ALTER TABLE public.donations ALTER COLUMN campaign_id DROP NOT NULL;
+
+-- Persistent donor directory — records are never deleted
+CREATE TABLE IF NOT EXISTS public.donors (
+  phone      TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  location   TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Receipt image tracking per year/month
+CREATE TABLE IF NOT EXISTS public.monthly_receipts (
+  year         INT NOT NULL,
+  month        INT NOT NULL,
+  storage_path TEXT NOT NULL,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (year, month)
+);
+
 -- ============================================================
--- HELPER FUNCTION: updated_at trigger
+-- FUNCTIONS
 -- ============================================================
+
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN
@@ -70,23 +75,6 @@ BEGIN
 END;
 $$;
 
--- Triggers for updated_at
-CREATE TRIGGER set_campaigns_updated_at
-  BEFORE UPDATE ON public.campaigns
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-
-CREATE TRIGGER set_donations_updated_at
-  BEFORE UPDATE ON public.donations
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-
-CREATE TRIGGER set_monthly_reports_updated_at
-  BEFORE UPDATE ON public.monthly_reports
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-
--- ============================================================
--- HELPER FUNCTION: is_admin()
--- Returns true if current user has role = 'admin' in profiles
--- ============================================================
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER AS $$
   SELECT EXISTS (
@@ -95,7 +83,6 @@ RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER AS $$
   );
 $$;
 
--- Auto-create profile row when a new auth user is created
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
@@ -106,6 +93,27 @@ BEGIN
 END;
 $$;
 
+-- ============================================================
+-- TRIGGERS (drop first so re-runs don't error)
+-- ============================================================
+
+DROP TRIGGER IF EXISTS set_campaigns_updated_at    ON public.campaigns;
+DROP TRIGGER IF EXISTS set_donations_updated_at    ON public.donations;
+DROP TRIGGER IF EXISTS set_donors_updated_at       ON public.donors;
+DROP TRIGGER IF EXISTS on_auth_user_created        ON auth.users;
+
+CREATE TRIGGER set_campaigns_updated_at
+  BEFORE UPDATE ON public.campaigns
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER set_donations_updated_at
+  BEFORE UPDATE ON public.donations
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER set_donors_updated_at
+  BEFORE UPDATE ON public.donors
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
@@ -114,13 +122,41 @@ CREATE TRIGGER on_auth_user_created
 -- ROW LEVEL SECURITY
 -- ============================================================
 
-ALTER TABLE public.profiles        ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.campaigns       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.donations       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.monthly_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campaigns        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.donations        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.donors           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.monthly_receipts ENABLE ROW LEVEL SECURITY;
 
--- Profiles: owner can read their own; admin can read all
-CREATE POLICY "profiles_select_own"
+-- Drop existing policies before recreating (idempotent)
+DROP POLICY IF EXISTS "profiles_select"                 ON public.profiles;
+DROP POLICY IF EXISTS "profiles_select_own"             ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update_own"             ON public.profiles;
+
+DROP POLICY IF EXISTS "campaigns_public_select"         ON public.campaigns;
+DROP POLICY IF EXISTS "campaigns_admin_insert"          ON public.campaigns;
+DROP POLICY IF EXISTS "campaigns_admin_update"          ON public.campaigns;
+DROP POLICY IF EXISTS "campaigns_admin_delete"          ON public.campaigns;
+
+DROP POLICY IF EXISTS "donations_public_select"         ON public.donations;
+DROP POLICY IF EXISTS "donations_admin_insert"          ON public.donations;
+DROP POLICY IF EXISTS "donations_admin_update"          ON public.donations;
+DROP POLICY IF EXISTS "donations_admin_delete"          ON public.donations;
+
+DROP POLICY IF EXISTS "donors_public_select"            ON public.donors;
+DROP POLICY IF EXISTS "Public can read donors"          ON public.donors;
+DROP POLICY IF EXISTS "donors_admin_insert"             ON public.donors;
+DROP POLICY IF EXISTS "Authenticated users can insert donors" ON public.donors;
+DROP POLICY IF EXISTS "donors_admin_update"             ON public.donors;
+DROP POLICY IF EXISTS "Authenticated users can update donors" ON public.donors;
+
+DROP POLICY IF EXISTS "monthly_receipts_public_select"  ON public.monthly_receipts;
+DROP POLICY IF EXISTS "Public read monthly_receipts"    ON public.monthly_receipts;
+DROP POLICY IF EXISTS "monthly_receipts_admin_all"      ON public.monthly_receipts;
+DROP POLICY IF EXISTS "Admin manage monthly_receipts"   ON public.monthly_receipts;
+
+-- ── profiles ────────────────────────────────────────────────
+CREATE POLICY "profiles_select"
   ON public.profiles FOR SELECT
   USING (id = auth.uid() OR public.is_admin());
 
@@ -128,13 +164,12 @@ CREATE POLICY "profiles_update_own"
   ON public.profiles FOR UPDATE
   USING (id = auth.uid());
 
--- Campaigns: public read
+-- ── campaigns ───────────────────────────────────────────────
 CREATE POLICY "campaigns_public_select"
   ON public.campaigns FOR SELECT
   TO anon, authenticated
   USING (TRUE);
 
--- Campaigns: admin write
 CREATE POLICY "campaigns_admin_insert"
   ON public.campaigns FOR INSERT
   TO authenticated
@@ -150,35 +185,12 @@ CREATE POLICY "campaigns_admin_delete"
   TO authenticated
   USING (public.is_admin());
 
--- Donations: public read
+-- ── donations ───────────────────────────────────────────────
 CREATE POLICY "donations_public_select"
   ON public.donations FOR SELECT
   TO anon, authenticated
   USING (TRUE);
 
--- Monthly reports: public read
-CREATE POLICY "monthly_reports_public_select"
-  ON public.monthly_reports FOR SELECT
-  TO anon, authenticated
-  USING (TRUE);
-
--- Monthly reports: admin write
-CREATE POLICY "monthly_reports_admin_insert"
-  ON public.monthly_reports FOR INSERT
-  TO authenticated
-  WITH CHECK (public.is_admin());
-
-CREATE POLICY "monthly_reports_admin_update"
-  ON public.monthly_reports FOR UPDATE
-  TO authenticated
-  USING (public.is_admin());
-
-CREATE POLICY "monthly_reports_admin_delete"
-  ON public.monthly_reports FOR DELETE
-  TO authenticated
-  USING (public.is_admin());
-
--- Donations: admin write
 CREATE POLICY "donations_admin_insert"
   ON public.donations FOR INSERT
   TO authenticated
@@ -194,25 +206,53 @@ CREATE POLICY "donations_admin_delete"
   TO authenticated
   USING (public.is_admin());
 
--- ============================================================
--- OPTIONAL SEED DATA (remove in production)
--- ============================================================
+-- ── donors ──────────────────────────────────────────────────
+-- No DELETE policy — donor records are permanent by design.
+CREATE POLICY "donors_public_select"
+  ON public.donors FOR SELECT
+  TO anon, authenticated
+  USING (TRUE);
 
--- INSERT INTO public.campaigns (name, description, start_date, end_date, is_active) VALUES
---   ('Masjid Renovation 2024', 'Fund for main hall renovation', '2024-01-01', '2024-12-31', TRUE),
---   ('Ramadan Aid 2024', 'Helping families during Ramadan', '2024-03-01', '2024-04-30', FALSE);
+CREATE POLICY "donors_admin_insert"
+  ON public.donors FOR INSERT
+  TO authenticated
+  WITH CHECK (public.is_admin());
+
+CREATE POLICY "donors_admin_update"
+  ON public.donors FOR UPDATE
+  TO authenticated
+  USING (public.is_admin());
+
+-- ── monthly_receipts ────────────────────────────────────────
+CREATE POLICY "monthly_receipts_public_select"
+  ON public.monthly_receipts FOR SELECT
+  TO anon, authenticated
+  USING (TRUE);
+
+CREATE POLICY "monthly_receipts_admin_all"
+  ON public.monthly_receipts FOR ALL
+  TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 -- ============================================================
--- ADMIN SETUP INSTRUCTIONS
+-- ADMIN SETUP (run after this script)
 -- ============================================================
--- After running this script:
--- 1. Go to Supabase Dashboard > Authentication > Users
--- 2. Click "Invite user" or "Add user" to create an admin account
--- 3. Then run the following (replace with actual user UUID and email):
+-- 1. Go to Supabase Dashboard → Authentication → Users
+-- 2. Create the admin user account
+-- 3. Promote to admin (replace the values below):
 --
 --   INSERT INTO public.profiles (id, email, role)
 --   VALUES ('your-user-uuid', 'admin@example.com', 'admin')
 --   ON CONFLICT (id) DO UPDATE SET role = 'admin';
 --
--- 4. Go to Authentication > Settings > Disable "Enable email signup"
+-- ============================================================
+-- STORAGE BUCKET SETUP (Dashboard UI)
+-- ============================================================
+-- Storage → New bucket
+--   Name:   receipts
+--   Public: ✅
+-- Storage policy for uploads:
+--   Allowed operation: INSERT
+--   Definition: (auth.uid() IS NOT NULL)
 -- ============================================================
