@@ -400,8 +400,13 @@ export default function AdminDashboard() {
                 style={{ borderBottom: showMonthSection ? '1.5px solid var(--c-border)' : 'none', background: 'var(--c-card-alt)' }}
                 onClick={() => setShowMonthSection(v => !v)}>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
-                    style={{ background: '#ecfdf5', border: '1.5px solid #a7f3d0' }}>🗂️</div>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: 'var(--c-accent-bg)', border: '1.5px solid var(--c-border-2)', color: 'var(--c-accent)' }}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
                   <div className="text-left">
                     <h2 className="font-bold" style={{ color: 'var(--c-text)' }}>Donations by Month</h2>
                     <p className="text-xs" style={{ color: 'var(--c-text-3)' }}>{donations.length} total records</p>
