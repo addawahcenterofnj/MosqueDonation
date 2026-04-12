@@ -60,9 +60,26 @@ export default function Navbar({ isAdmin, onLogout }: NavbarProps) {
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group min-w-0">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-lg sm:text-xl shrink-0 transition-transform group-hover:scale-110"
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110"
                 style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
-                🕌
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 32 32" fill="white">
+                  {/* Star/crescent at top */}
+                  <path d="M16 2 L17.2 5.6 L21 5.6 L18 7.8 L19.2 11.4 L16 9.2 L12.8 11.4 L14 7.8 L11 5.6 L14.8 5.6 Z" opacity="0.9"/>
+                  {/* Dome */}
+                  <path d="M8 18 Q8 12 16 12 Q24 12 24 18 Z"/>
+                  {/* Left minaret */}
+                  <rect x="5" y="13" width="3" height="9" rx="0.5"/>
+                  <rect x="4" y="12" width="5" height="1.5" rx="0.5"/>
+                  {/* Right minaret */}
+                  <rect x="24" y="13" width="3" height="9" rx="0.5"/>
+                  <rect x="23" y="12" width="5" height="1.5" rx="0.5"/>
+                  {/* Main wall */}
+                  <rect x="8" y="18" width="16" height="4" rx="0.5"/>
+                  {/* Door arch */}
+                  <path d="M14 22 L14 20 Q16 18 18 20 L18 22 Z" fill="rgba(6,78,59,0.5)"/>
+                  {/* Ground line */}
+                  <rect x="3" y="22" width="26" height="1.5" rx="0.75"/>
+                </svg>
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 sm:gap-2">
