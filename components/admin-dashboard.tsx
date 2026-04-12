@@ -198,6 +198,18 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteReceipt = async (year: number, month: number) => {
+    const path = `${year}/${String(month).padStart(2, '0')}.jpg`;
+    try {
+      await supabase.storage.from('receipts').remove([path]);
+      await supabase.from('monthly_receipts').delete().eq('year', year).eq('month', month);
+      await fetchReceipts();
+      showToast('Receipt deleted.');
+    } catch {
+      showToast('Delete failed — please try again.', 'error');
+    }
+  };
+
   const handleDonationEdit = (donation: Donation) => {
     setEditingDonation(donation);
     setShowDonationForm(true);
@@ -600,6 +612,7 @@ export default function AdminDashboard() {
                     hideTitle
                     receipts={receipts}
                     onUploadReceipt={handleUploadReceipt}
+                    onDeleteReceipt={handleDeleteReceipt}
                     onDownload={() => generateYearlyReportPDF(
                       reportYear,
                       donations.filter(d => Number(d.donation_date.split('-')[0]) === reportYear)

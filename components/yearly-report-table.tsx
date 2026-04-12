@@ -22,6 +22,8 @@ interface YearlyReportTableProps {
   receipts?: Record<string, string>;
   /** Admin only — called with (year, month 1-based, File) */
   onUploadReceipt?: (year: number, month: number, file: File) => Promise<void>;
+  /** Admin only — called with (year, month 1-based) */
+  onDeleteReceipt?: (year: number, month: number) => Promise<void>;
 }
 
 export default function YearlyReportTable({
@@ -33,12 +35,14 @@ export default function YearlyReportTable({
   hideTitle,
   receipts,
   onUploadReceipt,
+  onDeleteReceipt,
 }: YearlyReportTableProps) {
   const isAdmin = !!onUploadReceipt;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingMonth, setPendingMonth] = useState<number | null>(null); // 0-indexed
   const [uploadingMonth, setUploadingMonth] = useState<number | null>(null);
+  const [deletingMonth, setDeletingMonth] = useState<number | null>(null);
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
   const [imgError, setImgError] = useState(false);
 
@@ -85,7 +89,19 @@ export default function YearlyReportTable({
 
   /* ── Receipt action cell ─────────────────────────────── */
   function ReceiptCell({ idx, receiptUrl }: { idx: number; receiptUrl: string | null }) {
-    const busy = uploadingMonth === idx;
+    const uploading = uploadingMonth === idx;
+    const deleting = deletingMonth === idx;
+
+    const handleDelete = async () => {
+      if (!onDeleteReceipt) return;
+      setDeletingMonth(idx);
+      try {
+        await onDeleteReceipt(year, idx + 1);
+      } finally {
+        setDeletingMonth(null);
+      }
+    };
+
     return (
       <div className="flex items-center gap-1.5 justify-end">
         {receiptUrl && (
@@ -104,14 +120,14 @@ export default function YearlyReportTable({
         {isAdmin && (
           <button
             onClick={() => handleUploadClick(idx)}
-            disabled={busy}
+            disabled={uploading || deleting}
             className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg transition-colors disabled:opacity-40"
             style={receiptUrl
               ? { background: 'var(--c-bg)', color: 'var(--c-text-2)', border: '1px solid var(--c-border)' }
               : { background: 'var(--c-accent-bg)', color: 'var(--c-accent)', border: '1px solid var(--c-border-2)' }
             }
             title={receiptUrl ? 'Replace receipt' : 'Upload receipt'}>
-            {busy ? (
+            {uploading ? (
               <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -122,7 +138,28 @@ export default function YearlyReportTable({
                   d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
             )}
-            <span className="hidden sm:inline">{busy ? 'Uploading…' : receiptUrl ? 'Replace' : 'Upload'}</span>
+            <span className="hidden sm:inline">{uploading ? 'Uploading…' : receiptUrl ? 'Replace' : 'Upload'}</span>
+          </button>
+        )}
+        {isAdmin && receiptUrl && onDeleteReceipt && (
+          <button
+            onClick={handleDelete}
+            disabled={deleting || uploading}
+            className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg transition-colors disabled:opacity-40"
+            style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}
+            title="Delete receipt">
+            {deleting ? (
+              <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            ) : (
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            )}
+            <span className="hidden sm:inline">{deleting ? 'Deleting…' : 'Delete'}</span>
           </button>
         )}
       </div>
