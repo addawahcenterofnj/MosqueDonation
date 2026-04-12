@@ -312,8 +312,9 @@ export default function AdminDashboard() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-300 leading-none">Total Raised</p>
-                    <p className="text-lg sm:text-xl font-extrabold text-white leading-tight mt-0.5 break-all">
-                      {formatCurrency(totalAmount)}
+                    <p className="font-extrabold text-white leading-tight mt-0.5 whitespace-nowrap">
+                      <span className="text-lg sm:text-xl">{formatCurrency(totalAmount).replace(/\.\d+$/, '')}</span>
+                      <span className="text-xs sm:text-sm font-bold text-emerald-300">{formatCurrency(totalAmount).match(/\.\d+$/)?.[0] ?? ''}</span>
                     </p>
                   </div>
                 </div>

@@ -198,8 +198,13 @@ export default function PublicDashboardClient() {
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-300 leading-none">
                   {now.getFullYear()} Raised
                 </p>
-                <p className="text-lg sm:text-xl font-extrabold text-white leading-tight mt-0.5 break-all">
-                  {loading ? '—' : formatCurrency(thisYearTotal)}
+                <p className="font-extrabold text-white leading-tight mt-0.5 whitespace-nowrap">
+                  {loading ? <span className="text-lg sm:text-xl">—</span> : (
+                    <>
+                      <span className="text-lg sm:text-xl">{formatCurrency(thisYearTotal).replace(/\.\d+$/, '')}</span>
+                      <span className="text-xs sm:text-sm font-bold text-emerald-300">{formatCurrency(thisYearTotal).match(/\.\d+$/)?.[0] ?? ''}</span>
+                    </>
+                  )}
                 </p>
               </div>
             </div>
