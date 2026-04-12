@@ -201,8 +201,10 @@ export default function AdminDashboard() {
   const handleDeleteReceipt = async (year: number, month: number) => {
     const path = `${year}/${String(month).padStart(2, '0')}.jpg`;
     try {
-      await supabase.storage.from('receipts').remove([path]);
-      await supabase.from('monthly_receipts').delete().eq('year', year).eq('month', month);
+      const { error: storageError } = await supabase.storage.from('receipts').remove([path]);
+      if (storageError) { showToast(storageError.message || 'Delete failed.', 'error'); return; }
+      const { error: dbError } = await supabase.from('monthly_receipts').delete().eq('year', year).eq('month', month);
+      if (dbError) { showToast(dbError.message || 'Delete failed.', 'error'); return; }
       await fetchReceipts();
       showToast('Receipt deleted.');
     } catch {
@@ -222,7 +224,8 @@ export default function AdminDashboard() {
     confirmLabel: 'Delete',
     onConfirm: async () => {
       closeModal();
-      await supabase.from('donations').delete().eq('id', id);
+      const { error } = await supabase.from('donations').delete().eq('id', id);
+      if (error) { showToast(error.message || 'Delete failed.', 'error'); return; }
       await fetchData();
       showToast('Donation deleted');
     },
@@ -237,7 +240,8 @@ export default function AdminDashboard() {
       onConfirm: async () => {
         closeModal(); setSaving(true);
         const ids = filteredDonations.map(d => d.id);
-        await supabase.from('donations').delete().in('id', ids);
+        const { error } = await supabase.from('donations').delete().in('id', ids);
+        if (error) { showToast(error.message || 'Delete failed.', 'error'); setSaving(false); return; }
         await fetchData();
         showToast(`Deleted all donations for ${MONTHS[selectedMonth]} ${selectedYear}`);
         setSaving(false);
