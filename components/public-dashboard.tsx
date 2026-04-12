@@ -217,7 +217,13 @@ export default function PublicDashboardClient() {
         {/* ── Current Month Donors ── */}
         <section>
           <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <span className="text-lg">📅</span>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'var(--c-accent-bg)', border: '1.5px solid var(--c-border-2)', color: 'var(--c-accent)' }}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
             <h2 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>{currentMonthLabel} Donors</h2>
             {/* Live badge — moved from navbar */}
             <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md"
@@ -267,7 +273,13 @@ export default function PublicDashboardClient() {
             className="w-full flex items-center justify-between px-4 py-3 rounded-2xl mb-3 transition-colors"
             style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 1px 6px var(--c-shadow)' }}>
             <div className="flex items-center gap-2.5">
-              <span className="text-base">🗂️</span>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: 'var(--c-accent-bg)', border: '1.5px solid var(--c-border-2)', color: 'var(--c-accent)' }}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
               <span className="font-bold text-sm" style={{ color: 'var(--c-text)' }}>Browse by Month</span>
             </div>
             <svg
@@ -350,7 +362,12 @@ export default function PublicDashboardClient() {
             className="w-full flex items-center justify-between px-4 py-3 rounded-2xl mb-3 transition-colors"
             style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 1px 6px var(--c-shadow)' }}>
             <div className="flex items-center gap-2.5">
-              <span className="text-base">🔍</span>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: 'var(--c-accent-bg)', border: '1.5px solid var(--c-border-2)', color: 'var(--c-accent)' }}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
               <span className="font-bold text-sm" style={{ color: 'var(--c-text)' }}>Donor Lookup</span>
             </div>
             <svg
@@ -374,7 +391,13 @@ export default function PublicDashboardClient() {
             className="w-full flex items-center justify-between px-4 py-3 rounded-2xl mb-3 transition-colors"
             style={{ background: 'var(--c-card)', border: '1.5px solid var(--c-border)', boxShadow: '0 1px 6px var(--c-shadow)' }}>
             <div className="flex items-center gap-2.5">
-              <span className="text-base">📊</span>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: 'var(--c-accent-bg)', border: '1.5px solid var(--c-border-2)', color: 'var(--c-accent)' }}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
               <span className="font-bold text-sm" style={{ color: 'var(--c-text)' }}>Yearly Report</span>
             </div>
             <svg
