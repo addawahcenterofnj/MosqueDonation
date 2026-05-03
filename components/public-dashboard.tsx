@@ -7,6 +7,7 @@ import Navbar from '@/components/navbar';
 import YearlyReportTable from '@/components/yearly-report-table';
 import { formatCurrency } from '@/lib/utils';
 import DonorSearch from '@/components/donor-search';
+import WhatsAppShareButton from '@/components/whatsapp-share-button';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -240,6 +241,15 @@ export default function PublicDashboardClient() {
                 {currentMonthDonors.length} donor{currentMonthDonors.length !== 1 ? 's' : ''}
               </span>
             )}
+            {!loading && currentMonthDonors.length > 0 && (
+              <div className="ml-auto">
+                <WhatsAppShareButton
+                  label={currentMonthLabel}
+                  total={currentMonthTotal}
+                  donors={currentMonthDonors}
+                />
+              </div>
+            )}
           </div>
 
           {loading ? (
@@ -349,7 +359,16 @@ export default function PublicDashboardClient() {
                   <p className="font-medium" style={{ color: 'var(--c-text-2)' }}>No donations for {historyLabel}</p>
                 </div>
               ) : (
-                <MonthTable label={historyLabel} total={historyTotal} donors={historyDonors} showPhone />
+                <>
+                  <div className="flex justify-end mb-2">
+                    <WhatsAppShareButton
+                      label={historyLabel}
+                      total={historyTotal}
+                      donors={historyDonors}
+                    />
+                  </div>
+                  <MonthTable label={historyLabel} total={historyTotal} donors={historyDonors} showPhone />
+                </>
               )}
             </div>
           )}
