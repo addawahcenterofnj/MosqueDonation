@@ -1,10 +1,20 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Providers from './providers';
+
+export const viewport: Viewport = {
+  themeColor: '#1a472a',
+};
 
 export const metadata: Metadata = {
   title: 'Mosque Donation Tracker',
   description: 'Track and manage mosque donations transparently.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'MasjidDonate',
+  },
   icons: {
     icon: '/icon.svg',
     shortcut: '/icon.svg',
