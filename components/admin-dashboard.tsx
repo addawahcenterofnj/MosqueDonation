@@ -15,6 +15,7 @@ import { formatCurrency } from '@/lib/utils';
 import { generateYearlyReportPDF, generateMonthlyDonorReportPDF } from '@/lib/pdf';
 import { compressImage } from '@/lib/image-compress';
 import DonorSearch from '@/components/donor-search';
+import ReceiptModal from '@/components/receipt-modal';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -62,6 +63,11 @@ export default function AdminDashboard() {
   // Receipts: key = `${year}-${month}` (month 1-based), value = public URL
   const [receipts, setReceipts] = useState<Record<string, string>>({});
 
+  // Receipt modal state
+  const [receiptDonations, setReceiptDonations] = useState<Donation[]>([]);
+  const [receiptYearTotal, setReceiptYearTotal] = useState(0);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+
   const openModal = (opts: Omit<ModalState, 'open'>) => setModal({ open: true, ...opts });
   const closeModal = () => setModal(m => ({ ...m, open: false }));
 
@@ -107,6 +113,24 @@ export default function AdminDashboard() {
     router.refresh();
   };
 
+  // ── Receipt modal helper ───────────────────────────────
+  const openReceiptModal = (saved: Donation[]) => {
+    if (!saved.length) return;
+    const donorPhone = saved[0].donor_phone ?? saved[0].donor_name;
+    const year = Number(saved[0].donation_date.split('-')[0]);
+    const yearTotal = donations
+      .filter(d => {
+        const y = Number(d.donation_date.split('-')[0]);
+        const key = d.donor_phone ?? d.donor_name;
+        return y === year && key === donorPhone;
+      })
+      .reduce((s, d) => s + Number(d.amount), 0)
+      + saved.reduce((s, d) => s + Number(d.amount), 0);
+    setReceiptDonations(saved);
+    setReceiptYearTotal(yearTotal);
+    setShowReceiptModal(true);
+  };
+
   // ── Donor lookup ───────────────────────────────────────
   const lookupDonor = useCallback(async (phone: string): Promise<Donor | null> => {
     const { data } = await supabase.from('donors').select('*').eq('phone', phone).single();
@@ -142,6 +166,18 @@ export default function AdminDashboard() {
     showToast(editingDonation ? 'Donation updated!' : 'Donation added!');
     await fetchData();
     setShowDonationForm(false); setEditingDonation(null); setSaving(false);
+
+    // Show receipt modal after a new donation (not edits)
+    if (!editingDonation) {
+      const { data: saved } = await supabase
+        .from('donations')
+        .select('*')
+        .eq('donor_name', payload.donor_name)
+        .eq('donation_date', payload.donation_date)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (saved?.length) openReceiptModal(saved);
+    }
   };
 
   const handleSplitSubmit = async (base: SplitDonationBase, year: number, months: number[]) => {
@@ -177,6 +213,15 @@ export default function AdminDashboard() {
     await fetchData();
     setShowDonationForm(false);
     setSaving(false);
+
+    // Show receipt modal for the full split batch
+    const { data: saved } = await supabase
+      .from('donations')
+      .select('*')
+      .eq('donor_name', base.donor_name)
+      .in('donation_date', records.map(r => r.donation_date))
+      .order('donation_date', { ascending: true });
+    if (saved?.length) openReceiptModal(saved);
   };
 
   const handleUploadReceipt = async (year: number, month: number, file: File) => {
@@ -210,6 +255,21 @@ export default function AdminDashboard() {
     } catch {
       showToast('Delete failed — please try again.', 'error');
     }
+  };
+
+  const handleShareReceipt = (donation: Donation) => {
+    const donorPhone = donation.donor_phone ?? donation.donor_name;
+    const year = Number(donation.donation_date.split('-')[0]);
+    const yearTotal = donations
+      .filter(d => {
+        const y = Number(d.donation_date.split('-')[0]);
+        const key = d.donor_phone ?? d.donor_name;
+        return y === year && key === donorPhone;
+      })
+      .reduce((s, d) => s + Number(d.amount), 0);
+    setReceiptDonations([donation]);
+    setReceiptYearTotal(yearTotal);
+    setShowReceiptModal(true);
   };
 
   const handleDonationEdit = (donation: Donation) => {
@@ -540,6 +600,7 @@ export default function AdminDashboard() {
                       donations={filteredDonations}
                       onEdit={handleDonationEdit}
                       onDelete={handleDonationDelete}
+                      onShareReceipt={handleShareReceipt}
                     />
                   </div>
                 </>
@@ -628,6 +689,14 @@ export default function AdminDashboard() {
           </>
         )}
       </div>
+
+      {showReceiptModal && (
+        <ReceiptModal
+          donations={receiptDonations}
+          yearTotal={receiptYearTotal}
+          onClose={() => setShowReceiptModal(false)}
+        />
+      )}
 
       <ConfirmModal
         open={modal.open}
