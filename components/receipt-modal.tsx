@@ -45,8 +45,8 @@ export default function ReceiptModal({ donations, yearTotal, paymentMethod, onCl
 
   const totalAmount = donations.reduce((s, d) => s + Number(d.amount), 0);
 
-  const enteredDate = donations.map(d => d.donation_date).sort().reverse()[0];
-  const dateLabel = new Date(enteredDate + 'T00:00:00').toLocaleDateString('en-US', {
+  const enteredDate = donations.map(d => d.created_at).sort().reverse()[0];
+  const dateLabel = new Date(enteredDate).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
   });
 
@@ -75,7 +75,7 @@ export default function ReceiptModal({ donations, yearTotal, paymentMethod, onCl
         return;
       }
       const safeName = donorName.replace(/[^a-zA-Z0-9]/g, '-');
-      const file = new File([blob], `AdMosque-${safeName}.jpg`, { type: 'image/jpeg' });
+      const file = new File([blob], `Ad-Dawah-${safeName}.jpg`, { type: 'image/jpeg' });
 
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: 'Donation Receipt' });

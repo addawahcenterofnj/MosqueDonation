@@ -66,8 +66,8 @@ export function buildDonationCardSVG(data: DonationCardData): string {
 
   <rect x="30" y="28" width="68" height="68" rx="14" fill="#1a5c32"/>
   <text x="64" y="72" text-anchor="middle" font-size="26" fill="#c8a84b" font-weight="bold" font-family="serif">&#x634;</text>
-  <text x="114" y="54" font-size="21" font-weight="bold" fill="white">AdMosque</text>
-  <text x="114" y="76" font-size="12" fill="#a0c8a0">Mosque Donation Platform</text>
+  <text x="114" y="54" font-size="21" font-weight="bold" fill="white">Ad-Dawah</text>
+  <text x="114" y="76" font-size="12" fill="#a0c8a0">Islamic Education &amp; Outreach</text>
   <rect x="454" y="34" width="116" height="30" rx="15" fill="#1a5c32" stroke="#2d8a50" stroke-width="1.5"/>
   <text x="469" y="54" font-size="12" fill="#4cdb7a">&#10003; Verified</text>
 
