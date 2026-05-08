@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Donation } from '@/types/donation';
 
 const MONTH_NAMES = [
@@ -14,18 +14,15 @@ const MONTH_SHORT = [
 ];
 
 interface ReceiptModalProps {
-  /** The donation(s) to show on the receipt.
-   *  For a split entry pass all rows that share the same donor + save batch.
-   *  For a single entry pass a 1-element array. */
   donations: Donation[];
-  /** Year-to-date total for this donor (pre-calculated by caller) */
   yearTotal: number;
-  /** Called when admin clicks Close */
   onClose: () => void;
 }
 
 export default function ReceiptModal({ donations, yearTotal, onClose }: ReceiptModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
+  const receiptRef = useRef<HTMLDivElement>(null);
+  const [sharing, setSharing] = useState(false);
 
   // Close on Escape
   useEffect(() => {
@@ -41,50 +38,82 @@ export default function ReceiptModal({ donations, yearTotal, onClose }: ReceiptM
 
   // Collect unique months from all donation rows in this batch
   const months = donations
-    .map(d => {
-      const m = Number(d.donation_date.split('-')[1]) - 1; // 0-indexed
-      return m;
-    })
+    .map(d => Number(d.donation_date.split('-')[1]) - 1) // 0-indexed
     .filter((v, i, arr) => arr.indexOf(v) === i)
     .sort((a, b) => a - b);
 
   // Total amount across all rows in this batch
   const totalAmount = donations.reduce((s, d) => s + Number(d.amount), 0);
 
-  // Date label — use the most recent donation_date in the batch
-  const latestDate = donations
+  // Date label — use the donation_date entered by admin (most recent in batch)
+  const enteredDate = donations
     .map(d => d.donation_date)
     .sort()
     .reverse()[0];
-  const dateLabel = new Date(latestDate + 'T00:00:00').toLocaleDateString('en-GB', {
+  const dateLabel = new Date(enteredDate + 'T00:00:00').toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
   });
 
-  // WhatsApp share
-  const handleWhatsApp = () => {
-    const monthStr = months.length === 1
-      ? MONTH_NAMES[months[0]]
-      : months.map(m => MONTH_SHORT[m]).join(', ');
+  // Share as image via navigator.share (mobile) with html2canvas
+  const handleShare = async () => {
+    if (!receiptRef.current) return;
+    setSharing(true);
+    try {
+      // Dynamically load html2canvas so it's not bundled unless needed
+      const html2canvas = (await import('html2canvas')).default;
 
-    const msg = [
-      `بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ`,
-      ``,
-      `🕌 *Masjid Al-Noor — Donation Receipt*`,
-      ``,
-      `Assalamu Alaikum *${donorName}*,`,
-      ``,
-      `Thank you for your generous donation. May Allah accept it from you.`,
-      ``,
-      `📅 Month(s): ${monthStr}`,
-      `💰 Amount: $${totalAmount.toFixed(2)}`,
-      `📆 Date: ${dateLabel}`,
-      `📊 Year Total: $${yearTotal.toFixed(2)}`,
-      ``,
-      `جزاك الله خيراً`,
-      `_JazakAllah Khayran_`,
-    ].join('\n');
+      const canvas = await html2canvas(receiptRef.current, {
+        backgroundColor: null,
+        scale: 3, // high-res for phone screens
+        useCORS: true,
+        logging: false,
+      });
 
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+      canvas.toBlob(async (blob) => {
+        if (!blob) { setSharing(false); return; }
+
+        const file = new File([blob], 'AdMosque-Receipt.png', { type: 'image/png' });
+
+        const monthStr = months.length === 1
+          ? MONTH_NAMES[months[0]]
+          : months.map(m => MONTH_SHORT[m]).join(', ');
+
+        const text = [
+          `بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ`,
+          ``,
+          `🕌 *AdMosque — Donation Receipt*`,
+          ``,
+          `Assalamu Alaikum *${donorName}*,`,
+          ``,
+          `Thank you for your generous donation. May Allah accept it from you.`,
+          ``,
+          `📅 Month(s): ${monthStr}`,
+          `💰 Amount: $${totalAmount.toFixed(2)}`,
+          `📆 Date: ${dateLabel}`,
+          `📊 Year Total: $${yearTotal.toFixed(2)}`,
+          ``,
+          `جزاك الله خيراً`,
+          `_JazakAllah Khayran_`,
+        ].join('\n');
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          // Mobile: native share sheet opens — admin picks WhatsApp
+          await navigator.share({ files: [file], text });
+        } else {
+          // Desktop fallback: download the image
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'AdMosque-Receipt.png';
+          a.click();
+        }
+
+        setSharing(false);
+      }, 'image/png');
+
+    } catch (err) {
+      console.error('Share failed:', err);
+      setSharing(false);
+    }
   };
 
   return (
@@ -110,7 +139,9 @@ export default function ReceiptModal({ donations, yearTotal, onClose }: ReceiptM
           borderRadius: 'inherit',
         }} />
 
-        <div className="relative p-6 space-y-5">
+        {/* ── RECEIPT CARD (captured by html2canvas) ── */}
+        <div ref={receiptRef} className="relative p-6 space-y-5"
+          style={{ background: 'linear-gradient(168deg, #1c4d2e 0%, #0e2e1a 52%, #071a0e 100%)' }}>
 
           {/* Header — mosque name + verified */}
           <div className="flex items-center justify-between">
@@ -120,7 +151,7 @@ export default function ReceiptModal({ donations, yearTotal, onClose }: ReceiptM
                 🕌
               </div>
               <div>
-                <p className="text-sm font-bold" style={{ color: '#e8d5a3' }}>Masjid Al-Noor</p>
+                <p className="text-sm font-bold" style={{ color: '#e8d5a3' }}>AdMosque</p>
                 <p className="text-[10px]" style={{ color: '#4a6a4e' }}>mosque-donation.vercel.app</p>
               </div>
             </div>
@@ -145,7 +176,7 @@ export default function ReceiptModal({ donations, yearTotal, onClose }: ReceiptM
           <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.3), transparent)' }} />
 
           {/* Thank you */}
-          <p className="text-center text-sm italic" style={{ color: 'rgba(212,175,55,0.55)', fontFamily: 'serif', fontSize: '14px' }}>
+          <p className="text-center italic" style={{ color: 'rgba(212,175,55,0.55)', fontFamily: 'serif', fontSize: '14px' }}>
             &ldquo;Thank you for your generous donation&rdquo;
           </p>
 
@@ -182,7 +213,7 @@ export default function ReceiptModal({ donations, yearTotal, onClose }: ReceiptM
             </div>
           </div>
 
-          {/* Date + Year Total */}
+          {/* Date (from admin entry) + Year Total */}
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-xl p-3"
               style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.045)' }}>
@@ -209,28 +240,37 @@ export default function ReceiptModal({ donations, yearTotal, onClose }: ReceiptM
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex gap-3 pt-1">
-            <button
-              onClick={handleWhatsApp}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white transition-all"
-              style={{ background: '#25D366', boxShadow: '0 6px 20px rgba(37,211,102,0.3)' }}
-            >
+        </div>
+        {/* ── END RECEIPT CARD ── */}
+
+        {/* Action buttons — outside receiptRef so they don't appear in the image */}
+        <div className="flex gap-3 px-6 pb-6 pt-2">
+          <button
+            onClick={handleShare}
+            disabled={sharing}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-60"
+            style={{ background: '#25D366', boxShadow: '0 6px 20px rgba(37,211,102,0.3)' }}
+          >
+            {sharing ? (
+              <svg className="w-4 h-4 animate-spin fill-white" viewBox="0 0 24 24">
+                <path d="M12 2a10 10 0 0 1 10 10h-2a8 8 0 0 0-8-8V2z" />
+              </svg>
+            ) : (
               <svg className="w-4 h-4 fill-white shrink-0" viewBox="0 0 24 24">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
               </svg>
-              Share via WhatsApp
-            </button>
-            <button
-              onClick={onClose}
-              className="px-4 py-3 rounded-xl text-sm font-semibold transition-all"
-              style={{ background: 'rgba(255,255,255,0.05)', color: '#4a6a4e', border: '1px solid rgba(255,255,255,0.07)' }}
-            >
-              Close
-            </button>
-          </div>
-
+            )}
+            {sharing ? 'Preparing...' : 'Share via WhatsApp'}
+          </button>
+          <button
+            onClick={onClose}
+            className="px-4 py-3 rounded-xl text-sm font-semibold transition-all"
+            style={{ background: 'rgba(255,255,255,0.05)', color: '#4a6a4e', border: '1px solid rgba(255,255,255,0.07)' }}
+          >
+            Close
+          </button>
         </div>
+
       </div>
     </div>
   );
