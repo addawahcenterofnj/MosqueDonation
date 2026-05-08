@@ -54,64 +54,82 @@ export default function ReceiptModal({ donations, yearTotal, onClose }: ReceiptM
     day: 'numeric', month: 'long', year: 'numeric',
   });
 
+  const monthStr = months.length === 1
+    ? MONTH_NAMES[months[0]]
+    : months.map(m => MONTH_SHORT[m]).join(', ');
+
+  const shareText = [
+    `🕌 *AdMosque — Donation Receipt*`,
+    ``,
+    `Assalamu Alaikum *${donorName}*,`,
+    ``,
+    `Thank you for your generous donation. May Allah accept it from you.`,
+    ``,
+    `📅 Month(s): ${monthStr}`,
+    `💰 Amount: ${totalAmount.toFixed(2)}`,
+    `📆 Date: ${dateLabel}`,
+    `📊 Year Total: ${yearTotal.toFixed(2)}`,
+    ``,
+    `جزاك الله خيراً — JazakAllah Khayran`,
+  ].join('\n');
+
   // Share as image via navigator.share (mobile) with html2canvas
   const handleShare = async () => {
     if (!receiptRef.current) return;
     setSharing(true);
     try {
-      // Dynamically load html2canvas so it's not bundled unless needed
       const html2canvas = (await import('html2canvas')).default;
 
       const canvas = await html2canvas(receiptRef.current, {
-        backgroundColor: null,
-        scale: 3, // high-res for phone screens
+        backgroundColor: '#0e2e1a',
+        scale: 2,
         useCORS: true,
         logging: false,
+        allowTaint: true,
       });
 
+      // Try image share first, fall back to text share, fall back to download
       canvas.toBlob(async (blob) => {
-        if (!blob) { setSharing(false); return; }
+        if (!blob) {
+          // canvas failed — fall back to text-only WhatsApp
+          window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+          setSharing(false);
+          return;
+        }
 
         const file = new File([blob], 'AdMosque-Receipt.png', { type: 'image/png' });
 
-        const monthStr = months.length === 1
-          ? MONTH_NAMES[months[0]]
-          : months.map(m => MONTH_SHORT[m]).join(', ');
-
-        const text = [
-          `بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ`,
-          ``,
-          `🕌 *AdMosque — Donation Receipt*`,
-          ``,
-          `Assalamu Alaikum *${donorName}*,`,
-          ``,
-          `Thank you for your generous donation. May Allah accept it from you.`,
-          ``,
-          `📅 Month(s): ${monthStr}`,
-          `💰 Amount: $${totalAmount.toFixed(2)}`,
-          `📆 Date: ${dateLabel}`,
-          `📊 Year Total: $${yearTotal.toFixed(2)}`,
-          ``,
-          `جزاك الله خيراً`,
-          `_JazakAllah Khayran_`,
-        ].join('\n');
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          // Mobile: native share sheet opens — admin picks WhatsApp
-          await navigator.share({ files: [file], text });
-        } else {
-          // Desktop fallback: download the image
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = 'AdMosque-Receipt.png';
-          a.click();
+        try {
+          if (navigator.share && navigator.canShare?.({ files: [file] })) {
+            // Best path: native share sheet with image
+            await navigator.share({ files: [file], text: shareText });
+          } else if (navigator.share) {
+            // Share supported but not files — share text only
+            await navigator.share({ text: shareText });
+          } else {
+            // Desktop: download image + open WhatsApp text
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'AdMosque-Receipt.png';
+            a.click();
+            window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+          }
+        } catch (shareErr: any) {
+          // User cancelled or share failed — silently ignore cancel, log others
+          if (shareErr?.name !== 'AbortError') {
+            console.error('Share error:', shareErr);
+            // Last resort fallback
+            window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+          }
         }
 
         setSharing(false);
       }, 'image/png');
 
     } catch (err) {
-      console.error('Share failed:', err);
+      console.error('html2canvas failed:', err);
+      // html2canvas itself failed — fall back to text share
+      window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
       setSharing(false);
     }
   };
