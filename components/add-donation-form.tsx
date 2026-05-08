@@ -12,6 +12,7 @@ export interface SplitDonationBase {
   donor_location: string;
   amount: string;
   notes: string;
+  payment_method?: string;
 }
 
 interface AddDonationFormProps {
@@ -75,6 +76,7 @@ export default function AddDonationForm({
   const [splitYear, setSplitYear] = useState(CURRENT_YEAR);
   const [selectedMonths, setSelectedMonths] = useState<Set<number>>(new Set());
   const [amount, setAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
   const [notes, setNotes] = useState('');
   const [formError, setFormError] = useState('');
 
@@ -132,7 +134,7 @@ export default function AddDonationForm({
     if (mode === 'split') {
       if (selectedMonths.size === 0) return setFormError('Please select at least one month.');
       await onSubmitSplit(
-        { donor_name: donorName, donor_phone: digits, donor_location: donorLocation, amount, notes },
+        { donor_name: donorName, donor_phone: digits, donor_location: donorLocation, amount, notes, payment_method: paymentMethod || undefined },
         splitYear,
         [...selectedMonths].sort((a, b) => a - b)
       );
@@ -146,6 +148,7 @@ export default function AddDonationForm({
         amount,
         donation_date: `${month}-01`,
         notes,
+        payment_method: paymentMethod || undefined,
       });
     }
   };
@@ -456,6 +459,33 @@ export default function AddDonationForm({
                   )}
                 </div>
               )}
+
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>
+                  Payment Method
+                </label>
+                <div className="relative">
+                  <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                    style={{ color: 'var(--c-text-3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  <select
+                    value={paymentMethod}
+                    onChange={e => setPaymentMethod(e.target.value)}
+                    className="input pl-10 appearance-none cursor-pointer"
+                  >
+                    <option value="">Select method…</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Zelle">Zelle</option>
+                    <option value="Venmo">Venmo</option>
+                    <option value="Check">Check</option>
+                    <option value="PayPal">PayPal</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
 
               <div>
                 <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>Notes</label>

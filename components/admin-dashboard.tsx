@@ -66,6 +66,7 @@ export default function AdminDashboard() {
   // Receipt modal state
   const [receiptDonations, setReceiptDonations] = useState<Donation[]>([]);
   const [receiptYearTotal, setReceiptYearTotal] = useState(0);
+  const [receiptPaymentMethod, setReceiptPaymentMethod] = useState<string | undefined>(undefined);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
 
   const openModal = (opts: Omit<ModalState, 'open'>) => setModal({ open: true, ...opts });
@@ -114,7 +115,7 @@ export default function AdminDashboard() {
   };
 
   // ── Receipt modal helper ───────────────────────────────
-  const openReceiptModal = (saved: Donation[]) => {
+  const openReceiptModal = (saved: Donation[], pm?: string) => {
     if (!saved.length) return;
     const donorPhone = saved[0].donor_phone ?? saved[0].donor_name;
     const year = Number(saved[0].donation_date.split('-')[0]);
@@ -128,6 +129,7 @@ export default function AdminDashboard() {
       + saved.reduce((s, d) => s + Number(d.amount), 0);
     setReceiptDonations(saved);
     setReceiptYearTotal(yearTotal);
+    setReceiptPaymentMethod(pm);
     setShowReceiptModal(true);
   };
 
@@ -176,7 +178,7 @@ export default function AdminDashboard() {
         .eq('donation_date', payload.donation_date)
         .order('created_at', { ascending: false })
         .limit(1);
-      if (saved?.length) openReceiptModal(saved);
+      if (saved?.length) openReceiptModal(saved, data.payment_method);
     }
   };
 
@@ -221,7 +223,7 @@ export default function AdminDashboard() {
       .eq('donor_name', base.donor_name)
       .in('donation_date', records.map(r => r.donation_date))
       .order('donation_date', { ascending: true });
-    if (saved?.length) openReceiptModal(saved);
+    if (saved?.length) openReceiptModal(saved, base.payment_method);
   };
 
   const handleUploadReceipt = async (year: number, month: number, file: File) => {
@@ -694,6 +696,7 @@ export default function AdminDashboard() {
         <ReceiptModal
           donations={receiptDonations}
           yearTotal={receiptYearTotal}
+          paymentMethod={receiptPaymentMethod}
           onClose={() => setShowReceiptModal(false)}
         />
       )}

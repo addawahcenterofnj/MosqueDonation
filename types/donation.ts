@@ -23,4 +23,5 @@ export interface DonationFormData {
   amount: string;
   donation_date: string;
   notes: string;
+  payment_method?: string;
 }
