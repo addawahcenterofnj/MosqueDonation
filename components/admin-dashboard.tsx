@@ -216,14 +216,22 @@ export default function AdminDashboard() {
     setShowDonationForm(false);
     setSaving(false);
 
-    // Show receipt modal for the full split batch
-    const { data: saved } = await supabase
-      .from('donations')
-      .select('*')
-      .eq('donor_name', base.donor_name)
-      .in('donation_date', records.map(r => r.donation_date))
-      .order('donation_date', { ascending: true });
-    if (saved?.length) openReceiptModal(saved, base.payment_method);
+    // Build Donation objects directly from inserted records — avoids re-querying
+    // by donor+date which would pull in old records and inflate the total.
+    const now = new Date().toISOString();
+    const savedRecords: Donation[] = records.map((r, i) => ({
+      id: `new-${i}`,
+      donor_name: r.donor_name,
+      donor_phone: r.donor_phone ?? null,
+      donor_location: r.donor_location ?? null,
+      campaign_id: r.campaign_id ?? '',
+      amount: r.amount,
+      donation_date: r.donation_date,
+      notes: r.notes ?? null,
+      created_at: now,
+      updated_at: now,
+    }));
+    openReceiptModal(savedRecords, base.payment_method);
   };
 
   const handleUploadReceipt = async (year: number, month: number, file: File) => {
