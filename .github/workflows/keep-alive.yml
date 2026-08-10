@@ -13,6 +13,5 @@ jobs:
       - name: Ping Supabase REST API
         run: |
           curl -sS --fail \
-            "https://hkotzaaulausoregmasn.supabase.co/rest/v1/donors?select=phone&limit=1" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
+            "https://hkotzaaulausoreqmasn.supabase.co/rest/v1/donors?select=phone&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}"
